@@ -25,3 +25,4 @@ typing_extensions==4.16.0
 ufw==0.36.2
 VapourSynth==80
 wheel==0.48.0
+gunicorn
