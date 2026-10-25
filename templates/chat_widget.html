@@ -1,0 +1,21 @@
+<div class="chat-assistant" data-chat-assistant>
+    <section class="chat-panel" id="chat-panel" aria-label="AI Chat Assistant" aria-hidden="true">
+        <header class="chat-header">
+            <div class="chat-avatar" aria-hidden="true">✳</div>
+            <div class="chat-heading"><strong>ผู้ช่วยบันทึก</strong><span>AI Chat Assistant</span></div>
+            <button class="chat-close" type="button" data-chat-close aria-label="ปิดแชท">×</button>
+        </header>
+        <div class="chat-messages" data-chat-messages aria-live="polite" aria-relevant="additions">
+            <p class="chat-message assistant-message">สวัสดีครับ พิมพ์รายการรายรับหรือรายจ่ายเพื่อบันทึกได้เลย</p>
+        </div>
+        <form class="chat-form" data-chat-form>
+            <label class="sr-only" for="chat-message-input">ข้อความ</label>
+            <input id="chat-message-input" name="message" type="text" maxlength="500" autocomplete="off"
+                placeholder="เช่น กินข้าว 40 บาท" required>
+            <button type="submit" aria-label="ส่งข้อความ" title="ส่งข้อความ"><span aria-hidden="true">↑</span></button>
+        </form>
+        <p class="chat-disclaimer">ตรวจสอบข้อความก่อนบันทึกทุกครั้ง</p>
+    </section>
+    <button class="chat-fab" type="button" data-chat-toggle aria-expanded="false" aria-controls="chat-panel"
+        aria-label="เปิดผู้ช่วยแชท" title="เปิดผู้ช่วยแชท"><span aria-hidden="true">☏</span></button>
+</div>

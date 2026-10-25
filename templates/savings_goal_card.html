@@ -1,0 +1,72 @@
+{% set progress = goal.current_amount / goal.target_amount * 100 %}
+<article class="savings-item{% if goal.current_amount >= goal.target_amount %} savings-item-completed{% endif %}">
+    <div class="savings-item-heading">
+        <div>
+            <h4>{{ goal.title }}</h4>
+            <p>{{ 'กำหนด ' ~ goal.deadline if goal.deadline else 'ไม่มีวันกำหนด' }}</p>
+        </div>
+        <strong>{{ "%.0f"|format([progress, 100]|min) }}%</strong>
+    </div>
+    <div class="savings-track" role="progressbar" aria-label="ความคืบหน้า {{ goal.title }}" aria-valuemin="0"
+        aria-valuemax="100" aria-valuenow="{{ [progress, 100]|min|round|int }}">
+        <span style="width: {{ [progress, 100]|min }}%"></span>
+    </div>
+    <div class="savings-amounts">
+        <span>ออมแล้ว <strong>฿{{ "{:,.2f}".format(goal.current_amount) }}</strong></span>
+        <span>เป้าหมาย <strong>฿{{ "{:,.2f}".format(goal.target_amount) }}</strong></span>
+    </div>
+    <div class="goal-balance-actions">
+        <form action="{{ url_for('allocate_savings_to_goal', goal_id=goal.id) }}" method="post"
+            class="goal-balance-form goal-allocate-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+            <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount" type="number" min="0.01"
+                    max="{{ unallocated_savings }}" step="0.01" inputmode="decimal"
+                    placeholder="คลังว่าง ฿{{ '{:,.2f}'.format(unallocated_savings) }}" required></label>
+            <button class="finance-button secondary-button" type="submit">จัดสรรเงิน (+)</button>
+        </form>
+        <details class="goal-withdraw-details">
+            <summary class="finance-button secondary-button">ถอนเงิน (-)</summary>
+            <div class="goal-withdraw-options">
+                <form action="{{ url_for('withdraw_savings_from_goal', goal_id=goal.id) }}" method="post"
+                    class="goal-balance-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="withdrawal_type" value="return">
+                    <label class="finance-field"><span>คืนเข้าคลัง (บาท)</span><input name="amount" type="number"
+                            min="0.01" max="{{ goal.current_amount }}" step="0.01" inputmode="decimal"
+                            placeholder="สูงสุด {{ '{:,.2f}'.format(goal.current_amount) }}" required></label>
+                    <button class="finance-button secondary-button" type="submit">คืนเข้าคลัง</button>
+                </form>
+                <form action="{{ url_for('withdraw_savings_from_goal', goal_id=goal.id) }}" method="post"
+                    class="goal-balance-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="withdrawal_type" value="spend">
+                    <label class="finance-field"><span>ถอนใช้จ่าย (บาท)</span><input name="amount" type="number"
+                            min="0.01" max="{{ goal.current_amount }}" step="0.01" inputmode="decimal"
+                            placeholder="สูงสุด {{ '{:,.2f}'.format(goal.current_amount) }}" required></label>
+                    <button class="finance-button primary-button" type="submit">ถอนใช้จ่าย</button>
+                </form>
+            </div>
+        </details>
+    </div>
+    <details class="goal-edit-details">
+        <summary>จัดการเป้าหมาย</summary>
+        <div class="goal-edit-content">
+            <form action="{{ url_for('update_savings_goal', goal_id=goal.id) }}" method="post" class="goal-edit-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <label class="finance-field"><span>ชื่อเป้าหมาย</span><input name="title" maxlength="100"
+                        value="{{ goal.title }}" required></label>
+                <label class="finance-field"><span>ยอดเป้าหมาย</span><input name="target_amount" type="number"
+                        min="0.01" step="0.01" value="{{ goal.target_amount }}" required></label>
+                <label class="finance-field"><span>กำหนดวัน</span><input name="deadline" type="date"
+                        value="{{ goal.deadline or '' }}"></label>
+                <button class="finance-button secondary-button" type="submit">บันทึกการแก้ไข</button>
+            </form>
+            <form action="{{ url_for('delete_savings_goal', goal_id=goal.id) }}" method="post"
+                onsubmit="return confirm('ลบเป้าหมายนี้หรือไม่?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <button class="text-danger" type="submit">ลบเป้าหมาย</button>
+            </form>
+        </div>
+    </details>
+</article>

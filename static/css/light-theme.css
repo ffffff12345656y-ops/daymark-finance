@@ -1,0 +1,614 @@
+:root {
+    color-scheme: light;
+    --bg-main: #F8FAFC;
+    --bg-card: #FFFFFF;
+    --text-main: #0F172A;
+    --text-muted: #64748B;
+    --primary: #10B981;
+    --primary-hover: #059669;
+    --accent-student: #6366F1;
+    --border-color: #E2E8F0;
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07);
+    --bg: var(--bg-main);
+    --surface: var(--bg-card);
+    --surface-raised: #F1F5F9;
+    --surface-soft: #F1F5F9;
+    --line: var(--border-color);
+    --text: var(--text-main);
+    --muted: var(--text-muted);
+    --faint: #94A3B8;
+    --paper: var(--bg-main);
+    --ink: var(--text-main);
+    --mint: var(--primary);
+    --mint-deep: var(--primary-hover);
+    --mint-light: #ECFDF5;
+}
+
+body,
+body.student-body,
+body.finance-body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+}
+
+body.student-body:not(.finance-body) {
+    --mint: var(--accent-student);
+    --mint-deep: #4F46E5;
+    --mint-light: #EEF2FF;
+}
+
+button,
+a,
+input,
+select,
+textarea {
+    transition: all 0.2s ease;
+}
+
+button,
+.primary-navigation a,
+.student-nav a,
+.student-subnav a {
+    cursor: pointer;
+}
+
+button:hover,
+.primary-navigation a:hover,
+.student-nav a:hover,
+.student-subnav a:hover {
+    transform: translateY(-1px);
+}
+
+input,
+select,
+textarea,
+.text-field,
+.chart-select,
+.finance-filter input,
+.finance-field input,
+.inline-edit-form input,
+.inline-edit-form select,
+.student-field input,
+.student-field select,
+.assignment-filter,
+.score-select,
+.student-field textarea,
+.exam-form input,
+.grade-form input {
+    border-color: var(--border-color);
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    color-scheme: light;
+}
+
+input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="range"]):not([type="hidden"]),
+select,
+textarea {
+    border-color: var(--border-color);
+    background-color: var(--bg-card);
+    color: var(--text-main);
+    color-scheme: light;
+}
+
+input:focus,
+select:focus,
+textarea:focus,
+.text-field:focus,
+.chart-select:focus,
+.finance-filter input:focus,
+.finance-field input:focus,
+.inline-edit-form input:focus,
+.inline-edit-form select:focus,
+.student-field input:focus,
+.student-field select:focus,
+.assignment-filter:focus,
+.score-select:focus,
+.student-field textarea:focus,
+.exam-form input:focus,
+.grade-form input:focus {
+    border-color: var(--primary) !important;
+    outline: 3px solid rgb(16 185 129 / 18%) !important;
+}
+
+.student-body:not(.finance-body) input:focus,
+.student-body:not(.finance-body) select:focus,
+.student-body:not(.finance-body) textarea:focus {
+    border-color: var(--accent-student) !important;
+    outline: 3px solid rgb(99 102 241 / 18%) !important;
+}
+
+.stat-panel,
+.chart-panel,
+.journal-section,
+.goals-section,
+.table-frame,
+.month-control,
+.finance-filter,
+.finance-summary-card,
+.student-stat,
+.student-section,
+.calendar-section,
+.schedule-card,
+.note-card,
+.exam-item,
+.goal-item,
+.note-entry {
+    border-color: var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+.rail {
+    border-color: var(--border-color);
+    background: var(--bg-card);
+    box-shadow: var(--shadow-sm);
+}
+
+.rail-link {
+    color: var(--text-muted);
+}
+
+.rail-link:hover,
+.rail-link.active {
+    background: #ECFDF5;
+    color: var(--primary-hover);
+}
+
+.topbar,
+.student-topbar {
+    border-color: var(--border-color);
+    background: rgb(255 255 255 / 94%);
+    box-shadow: var(--shadow-sm);
+}
+
+.account-name,
+.student-account-name,
+.stat-label,
+.stat-foot,
+.field-label,
+.goal-checklist-summary,
+.goal-progress-label,
+.notes-heading h3,
+.note-entry-excerpt,
+.habit-table td,
+.date-cell {
+    color: var(--text-main);
+}
+
+.crumb,
+.topbar-right,
+.heading-copy,
+.section-note,
+.table-foot,
+.stat-unit,
+.stat-foot-label,
+.field-label>span,
+.student-subtitle,
+.student-stat-foot,
+.finance-summary-card>small {
+    color: var(--text-muted);
+}
+
+.stat-panel,
+.chart-panel,
+.journal-section,
+.goals-section {
+    color: var(--text-main);
+}
+
+.stat-panel {
+    background: var(--bg-card);
+}
+
+.stat-main {
+    border-color: #A7F3D0;
+    background: linear-gradient(135deg, #ECFDF5, #FFFFFF 76%);
+    box-shadow: inset 3px 0 var(--primary), var(--shadow-sm);
+}
+
+.stat-label,
+.stat-main .stat-foot,
+.stat-main .stat-foot-label,
+.stat-unit {
+    color: var(--text-muted);
+}
+
+.stat-value,
+.stat-main .stat-value,
+.finance-summary-card>strong,
+.student-stat-number strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+.table-frame {
+    overflow: auto;
+    background: var(--bg-card);
+    scrollbar-color: #CBD5E1 var(--bg-main);
+}
+
+.habit-table th,
+.habit-table td {
+    border-color: var(--border-color);
+    border-right: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.habit-table th,
+.habit-table th:first-child,
+.habit-table td:first-child {
+    background: #F1F5F9;
+    color: var(--text-main);
+}
+
+.date-cell,
+.date-rate,
+.weekday,
+.table-foot,
+.chart-heading p,
+.chart-legend,
+.chart-legend>span:first-child,
+.chart-hint,
+.notes-empty,
+.empty-goals,
+.goal-hint,
+.empty-table,
+.goal-checklist-summary,
+.goal-progress-label,
+.goal-monthly-summary {
+    color: var(--text-muted);
+}
+
+.check-input {
+    border-color: #CBD5E1;
+    background: #FFFFFF;
+}
+
+.chart-panel,
+.journal-section,
+.goals-section {
+    background: var(--bg-card);
+}
+
+.metric-summary-item,
+.note-entry,
+.goal-item,
+.chart-select,
+.text-field,
+.color-picker-wrap,
+.goal-color-input {
+    border-color: var(--border-color);
+    background: #FFFFFF;
+    color: var(--text-main);
+}
+
+.notes-section,
+.goal-progress-form,
+.backup-tools {
+    border-color: var(--border-color);
+}
+
+.note-dialog {
+    border-color: var(--border-color);
+    border-radius: 12px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    box-shadow: 0 20px 60px rgb(15 23 42 / 18%);
+}
+
+.note-dialog-content {
+    border-color: var(--border-color);
+    background: var(--bg-main);
+    color: var(--text-main);
+}
+
+.note-dialog::backdrop {
+    background: rgb(15 23 42 / 30%);
+}
+
+.primary-button,
+.add-button,
+.student-primary-button,
+.finance-button.primary-button,
+.auth-submit {
+    border-color: var(--primary);
+    background: var(--primary);
+    color: #FFFFFF;
+    box-shadow: var(--shadow-sm);
+}
+
+.primary-button:hover,
+.add-button:hover,
+.student-primary-button:hover,
+.finance-button.primary-button:hover,
+.auth-submit:hover {
+    background: var(--primary-hover);
+}
+
+.finance-body .primary-button,
+.finance-body .finance-button.primary-button {
+    border-color: var(--primary);
+    background: var(--primary);
+}
+
+.finance-body .primary-button:hover,
+.finance-body .finance-button.primary-button:hover {
+    background: var(--primary-hover);
+}
+
+.student-body:not(.finance-body) .student-primary-button {
+    border-color: var(--accent-student);
+    background: var(--accent-student);
+}
+
+.student-body:not(.finance-body) .student-primary-button:hover {
+    background: #4F46E5;
+}
+
+.student-body:not(.finance-body) .student-subnav a[aria-current="page"] {
+    border-color: #C7D2FE;
+    background: #EEF2FF;
+    color: #4F46E5;
+}
+
+.student-body:not(.finance-body) .student-table th {
+    border-color: var(--border-color);
+    background: #F1F5F9;
+    color: #475569;
+}
+
+.student-body:not(.finance-body) .student-table td {
+    border-color: var(--border-color);
+    color: var(--text-main);
+}
+
+.student-body:not(.finance-body) .student-table tbody tr:hover {
+    background-color: #F8FAFC;
+}
+
+.progress-save-button {
+    border-color: #A7F3D0;
+    background: #ECFDF5;
+    color: #047857;
+}
+
+.progress-save-button:hover {
+    background: #D1FAE5;
+}
+
+.student-outline-button,
+.secondary-button,
+.mode-switch-link,
+.student-subnav a {
+    border-color: var(--border-color);
+    background: #FFFFFF;
+}
+
+.auth-aside {
+    background: linear-gradient(145deg, #ECFDF5, #FFFFFF 80%);
+    color: var(--text-main);
+}
+
+.auth-aside-copy p,
+.auth-aside-foot {
+    color: var(--text-muted);
+}
+
+.auth-input:focus {
+    border-color: var(--primary);
+    outline-color: rgb(16 185 129 / 18%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg-main: #101817;
+    --bg-card: #17211f;
+    --text-main: #eff2e9;
+    --text-muted: #a2b2aa;
+    --primary: #75d6b1;
+    --primary-hover: #3caa83;
+    --accent-student: #a5b4fc;
+    --border-color: #30423b;
+    --shadow-sm: 0 1px 3px rgb(0 0 0 / 22%);
+    --shadow-md: 0 4px 12px rgb(0 0 0 / 24%);
+    --bg: var(--bg-main);
+    --surface: var(--bg-card);
+    --surface-raised: #1c2926;
+    --surface-soft: #202d2a;
+    --line: var(--border-color);
+    --text: var(--text-main);
+    --muted: var(--text-muted);
+    --faint: #82948a;
+    --paper: var(--bg-main);
+    --ink: var(--text-main);
+    --mint: var(--primary);
+    --mint-deep: var(--primary-hover);
+    --mint-light: #20372f;
+    --surface: #17211f;
+    --orange: #f19a72;
+    --yellow: #e7bd68;
+    --red: #f08c8c;
+}
+
+:root[data-theme="dark"] body,
+:root[data-theme="dark"] body.student-body,
+:root[data-theme="dark"] body.finance-body {
+    background-color: var(--bg-main);
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] .topbar,
+:root[data-theme="dark"] .student-topbar {
+    border-color: var(--border-color);
+    background: rgb(23 33 31 / 94%);
+}
+
+:root[data-theme="dark"] .rail,
+:root[data-theme="dark"] .stat-panel,
+:root[data-theme="dark"] .chart-panel,
+:root[data-theme="dark"] .journal-section,
+:root[data-theme="dark"] .goals-section,
+:root[data-theme="dark"] .table-frame,
+:root[data-theme="dark"] .month-control,
+:root[data-theme="dark"] .finance-filter,
+:root[data-theme="dark"] .finance-summary-card,
+:root[data-theme="dark"] .student-stat,
+:root[data-theme="dark"] .student-section,
+:root[data-theme="dark"] .calendar-section,
+:root[data-theme="dark"] .schedule-card,
+:root[data-theme="dark"] .note-card,
+:root[data-theme="dark"] .exam-item,
+:root[data-theme="dark"] .goal-item,
+:root[data-theme="dark"] .note-entry {
+    border-color: var(--border-color);
+    background: var(--bg-card);
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] .stat-main {
+    border-color: #3caa83;
+    background: linear-gradient(135deg, #20372f, #17211f 76%);
+}
+
+:root[data-theme="dark"] .habit-table th,
+:root[data-theme="dark"] .habit-table th:first-child,
+:root[data-theme="dark"] .habit-table td:first-child,
+:root[data-theme="dark"] .student-table th {
+    background: #202d2a;
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] .habit-table td,
+:root[data-theme="dark"] .student-table td,
+:root[data-theme="dark"] .habit-table th,
+:root[data-theme="dark"] .student-table th {
+    border-color: var(--border-color);
+}
+
+:root[data-theme="dark"] .student-table tbody tr:hover {
+    background-color: #202d2a;
+}
+
+:root[data-theme="dark"] .metric-summary-item,
+:root[data-theme="dark"] .note-entry,
+:root[data-theme="dark"] .goal-item,
+:root[data-theme="dark"] .chart-select,
+:root[data-theme="dark"] .text-field,
+:root[data-theme="dark"] .color-picker-wrap,
+:root[data-theme="dark"] .goal-color-input,
+:root[data-theme="dark"] .student-outline-button,
+:root[data-theme="dark"] .secondary-button,
+:root[data-theme="dark"] .mode-switch-link,
+:root[data-theme="dark"] .student-subnav a {
+    border-color: var(--border-color);
+    background: #1c2926;
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] input,
+:root[data-theme="dark"] select,
+:root[data-theme="dark"] textarea,
+:root[data-theme="dark"] .text-field,
+:root[data-theme="dark"] .chart-select,
+:root[data-theme="dark"] .finance-filter input,
+:root[data-theme="dark"] .finance-field input,
+:root[data-theme="dark"] .inline-edit-form input,
+:root[data-theme="dark"] .inline-edit-form select,
+:root[data-theme="dark"] .student-field input,
+:root[data-theme="dark"] .student-field select,
+:root[data-theme="dark"] .assignment-filter,
+:root[data-theme="dark"] .score-select,
+:root[data-theme="dark"] .student-field textarea,
+:root[data-theme="dark"] .exam-form input,
+:root[data-theme="dark"] .grade-form input {
+    border-color: var(--border-color);
+    background-color: #1c2926;
+    color: var(--text-main);
+    color-scheme: dark;
+}
+
+:root[data-theme="dark"] .primary-navigation {
+    color: var(--text-muted);
+}
+
+:root[data-theme="dark"] .primary-navigation a:hover {
+    border-color: var(--border-color);
+    background: #1c2926;
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] .primary-navigation a[aria-current="page"],
+:root[data-theme="dark"] .student-body:not(.finance-body) .student-subnav a[aria-current="page"] {
+    border-color: #3caa83;
+    background: #20372f;
+    color: #9de0bf;
+}
+
+:root[data-theme="dark"] .progress-save-button {
+    border-color: #3caa83;
+    background: #20372f;
+    color: #9de0bf;
+}
+
+:root[data-theme="dark"] .auth-layout {
+    background: var(--bg-main);
+}
+
+:root[data-theme="dark"] .auth-main {
+    background: var(--bg-main);
+}
+
+:root[data-theme="dark"] .auth-aside {
+    background: linear-gradient(145deg, #20372f, #17211f 80%);
+    color: var(--text-main);
+}
+
+:root[data-theme="dark"] .auth-form-wrap,
+:root[data-theme="dark"] .auth-form-wrap label {
+    color: var(--text-main);
+}
+
+.theme-toggle {
+    display: inline-grid;
+    flex: 0 0 44px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-card);
+    color: var(--text-main);
+    cursor: pointer;
+    font-size: 22px;
+    line-height: 1;
+}
+
+.theme-toggle:hover {
+    border-color: var(--primary);
+    color: var(--primary-hover);
+}
+
+.theme-toggle:focus-visible {
+    outline: 3px solid rgb(16 185 129 / 35%);
+    outline-offset: 2px;
+}
+
+.auth-theme-toggle {
+    position: fixed;
+    z-index: 10;
+    top: 16px;
+    right: 16px;
+}

@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10B981">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script src="{{ url_for('static', filename='js/theme.js', v='1') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}" defer></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Daymark | Habit & Goal Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='14') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/light-theme.css', v='5') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css', v='1') }}">
+</head>
+
+<body>
+    <div class="app-shell">
+        <aside class="rail" aria-label="เมนูหลัก">
+            <a class="brand-mark" href="#top" aria-label="Daymark home">d<span>.</span></a>
+            <a class="rail-link active" href="#overview" aria-label="ภาพรวม" title="ภาพรวม"><span>◫</span></a>
+            <a class="rail-link" href="#calendar" aria-label="เช็กลิสต์" title="เช็กลิสต์"><span>▦</span></a>
+            <a class="rail-link" href="#insights" aria-label="สถิติ" title="สถิติ"><span>⌁</span></a>
+            <a class="rail-link" href="#goals" aria-label="เป้าหมาย" title="เป้าหมาย"><span>＋</span></a>
+            <a class="rail-link" href="{{ url_for('finance') }}" aria-label="การเงิน Finance"
+                title="การเงิน Finance"><span>฿</span></a>
+            <div class="rail-bottom"><span class="rail-avatar">DM</span></div>
+        </aside>
+
+        <main class="main-content" id="top">
+            <header class="topbar">
+                <div class="crumb"><span class="crumb-dot"></span> PERSONAL SPACE <span class="crumb-slash">/</span>
+                    HABIT TRACKER</div>
+                {% set primary_nav_active = '' %}
+                {% include 'primary_nav.html' %}
+                <div class="topbar-right"><span class="live-indicator">ข้อมูลบันทึกอัตโนมัติ</span><a
+                        class="mode-switch-link" href="{{ url_for('student.student_dashboard') }}">โหมดนักเรียน
+                        <span>↗</span></a><span class="avatar" title="{{ current_user.username }}">{{
+                        current_user.username[:1]|upper }}</span>
+                    <span class="account-name">{{ current_user.username }}</span>
+                    <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token"
+                            value="{{ csrf_token }}"><button class="account-logout" type="submit">ออกจากระบบ</button>
+                    </form>
+                </div>
+            </header>
+
+            <div class="page-wrap">
+                <section class="page-heading" id="overview">
+                    <div>
+                        <p class="eyebrow">YOUR PERSONAL RHYTHM</p>
+                        <h1>ทุกวันมีความหมาย<span>.</span></h1>
+                        <p class="heading-copy">ความสม่ำเสมอเล็ก ๆ ที่พาคุณไปถึงเป้าหมาย</p>
+                    </div>
+                    <div class="month-control">
+                        <button class="icon-button" id="previous-month" type="button" aria-label="เดือนก่อน">←</button>
+                        <label for="month-picker" class="month-label"><span class="calendar-icon">▦</span><span
+                                id="month-display" aria-hidden="true"></span><input id="month-picker" type="month"
+                                aria-label="เลือกเดือน"></label>
+                        <button class="icon-button" id="next-month" type="button" aria-label="เดือนถัดไป">→</button>
+                    </div>
+                </section>
+
+                <section class="stat-grid" aria-label="สรุปประจำเดือน">
+                    <article class="stat-panel stat-main">
+                        <div class="stat-top"><span class="stat-label">อัตราความสำเร็จเดือนนี้</span><span
+                                class="stat-period" id="stat-period">เดือนนี้</span></div>
+                        <div class="stat-main-content">
+                            <div class="stat-value"><span id="overall-rate">0</span><span class="stat-unit">%</span>
+                            </div>
+                            <span class="stat-icon stat-icon-main">↗</span>
+                        </div>
+                        <div class="stat-progress-track"><span id="overall-bar"></span></div>
+                        <div class="stat-foot"><span id="completion-count">0 / 0 ครั้ง</span><span
+                                class="stat-foot-label">บันทึกสำเร็จ</span></div>
+                    </article>
+                    <article class="stat-panel">
+                        <div class="stat-top"><span class="stat-label">เป้าหมายที่กำลังทำ</span><span
+                                class="stat-icon icon-yellow">◎</span></div>
+                        <div class="stat-value"><span id="goal-count">0</span><span class="stat-unit">เป้าหมาย</span>
+                        </div>
+                        <div class="stat-foot muted-foot"><span
+                                class="stat-accent-dot"></span><span>ออกแบบจังหวะในแบบของคุณ</span></div>
+                    </article>
+                    <article class="stat-panel">
+                        <div class="stat-top"><span class="stat-label">วันที่ทำได้ดีที่สุด</span><span
+                                class="stat-icon icon-coral">✳</span></div>
+                        <div class="stat-value stat-day"><span id="best-day">—</span></div>
+                        <div class="stat-foot muted-foot"><span class="stat-accent-dot coral-dot"></span><span
+                                id="best-day-caption">เริ่มเช็กเป้าหมายเพื่อดูสถิติ</span></div>
+                    </article>
+                </section>
+
+                <section class="section-block" id="calendar">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">SHOW UP, ONE DAY AT A TIME</p>
+                            <h2>บันทึกประจำเดือน</h2>
+                        </div>
+                        <span class="section-note"><span class="legend-dot"></span> ทำสำเร็จ</span>
+                    </div>
+                    <div class="table-frame">
+                        <table class="habit-table" id="habit-table">
+                            <thead id="habit-head"></thead>
+                            <tbody id="habit-body"></tbody>
+                        </table>
+                    </div>
+                    <div class="table-foot"><span>เลือกช่องเพื่อบันทึกผลทันที</span><span id="table-summary">—</span>
+                    </div>
+                </section>
+
+                <section class="section-block" id="insights">
+                    <div class="section-heading">
+                        <div>
+                            <p class="eyebrow">PATTERNS OVER PERFECTION</p>
+                            <h2>แนวโน้มของคุณ</h2>
+                        </div>
+                        <span class="section-note">อัปเดตตามข้อมูลจริง</span>
+                    </div>
+                    <div class="chart-grid">
+                        <article class="chart-panel">
+                            <div class="chart-heading">
+                                <div>
+                                    <h3>ความสม่ำเสมอของเป้าหมาย</h3>
+                                    <p>เปอร์เซ็นต์วันที่ทำสำเร็จในเดือนนี้</p>
+                                </div><span class="chart-mark">01</span>
+                            </div>
+                            <div class="chart-canvas"><canvas id="goals-chart"
+                                    aria-label="กราฟความสำเร็จแยกตามเป้าหมาย"></canvas></div>
+                            <div class="chart-empty" id="goals-chart-empty">เพิ่มเป้าหมายเพื่อเริ่มดูความคืบหน้า</div>
+                        </article>
+                        <article class="chart-panel">
+                            <div class="chart-heading">
+                                <div>
+                                    <h3>ใจและพลังงาน</h3>
+                                    <p id="metrics-chart-caption">เลือกคะแนนที่ต้องการดู · เต็ม 5</p>
+                                </div>
+                                <label class="chart-select-label"><span class="sr-only">เลือกชนิดคะแนน</span>
+                                    <select id="metrics-chart-type" class="chart-select">
+                                        <option value="mood">อารมณ์</option>
+                                        <option value="energy">พลังงาน</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <div class="metric-summary" id="metric-summary"></div>
+                            <div class="chart-canvas"><canvas id="metrics-chart" aria-label="กราฟคะแนนรายวัน"></canvas>
+                            </div>
+                            <div class="chart-empty" id="metrics-chart-empty">บันทึกคะแนนรายวันเพื่อดูแนวโน้ม</div>
+                            <div class="chart-legend"><span><i class="legend-line mood-line"></i><span
+                                        id="metrics-legend-label">อารมณ์</span></span><span
+                                    class="chart-hint">แตะ/ชี้แท่งเพื่อดูวันที่</span></div>
+                            <section class="notes-section" aria-labelledby="notes-title">
+                                <div class="notes-heading">
+                                    <h3 id="notes-title">บันทึกที่เขียนไว้</h3><span id="notes-count"
+                                        class="notes-count">0</span>
+                                </div>
+                                <div id="notes-list" class="notes-list"></div>
+                                <p id="notes-empty" class="notes-empty">ยังไม่มีโน้ตในเดือนนี้</p>
+                            </section>
+                        </article>
+                    </div>
+                </section>
+
+                <section class="lower-grid">
+                    <section class="section-block journal-section" id="journal">
+                        <div class="section-heading compact-heading">
+                            <div>
+                                <p class="eyebrow">A MOMENT TO CHECK IN</p>
+                                <h2>บันทึกประจำวัน</h2>
+                            </div>
+                            <span class="journal-glyph">✳</span>
+                        </div>
+                        <form id="metrics-form" class="journal-form">
+                            <label class="field-label" for="metric-date">วันที่</label>
+                            <input class="text-field date-field" id="metric-date" type="date" required>
+                            <div class="score-fields">
+                                <label class="field-label" for="mood-score">อารมณ์วันนี้ <span>1–5</span>
+                                    <select class="text-field score-select" id="mood-score">
+                                        <option value="">ยังไม่ระบุ</option>
+                                        <option value="1">1 · หนักมาก</option>
+                                        <option value="2">2 · ไม่ค่อยดี</option>
+                                        <option value="3">3 · ปกติ</option>
+                                        <option value="4">4 · ดี</option>
+                                        <option value="5">5 · ดีมาก</option>
+                                    </select>
+                                </label>
+                                <label class="field-label" for="energy-score">พลังงาน <span>1–5</span>
+                                    <select class="text-field score-select" id="energy-score">
+                                        <option value="">ยังไม่ระบุ</option>
+                                        <option value="1">1 · น้อยมาก</option>
+                                        <option value="2">2 · น้อย</option>
+                                        <option value="3">3 · พอดี</option>
+                                        <option value="4">4 · ดี</option>
+                                        <option value="5">5 · เต็มเปี่ยม</option>
+                                    </select>
+                                </label>
+                            </div>
+                            <label class="field-label" for="daily-note">บันทึกสั้น ๆ <span>ไม่เกิน 2,000
+                                    ตัวอักษร</span></label>
+                            <textarea class="text-field note-field" id="daily-note" maxlength="2000" rows="3"
+                                placeholder="วันนี้มีอะไรที่อยากจดจำไหม?"></textarea>
+                            <div class="journal-submit"><span id="metrics-status" role="status"></span><button
+                                    class="primary-button" type="submit">บันทึกวันของฉัน <span>↗</span></button></div>
+                        </form>
+                    </section>
+
+                    <section class="section-block goals-section" id="goals">
+                        <div class="section-heading compact-heading">
+                            <div>
+                                <p class="eyebrow">MAKE IT YOURS</p>
+                                <h2>จัดการเป้าหมาย</h2>
+                            </div>
+                            <span class="goal-count-badge" id="manage-count">0</span>
+                        </div>
+                        <form id="goal-form" class="goal-create-form">
+                            <label class="sr-only" for="new-goal-name">ชื่อเป้าหมายใหม่</label>
+                            <input class="text-field" id="new-goal-name" maxlength="60"
+                                placeholder="เพิ่มเป้าหมายใหม่..." required>
+                            <label class="color-picker-wrap" title="เลือกสีเป้าหมาย"><input id="new-goal-color"
+                                    type="color" value="#75d6b1" aria-label="เลือกสีเป้าหมาย"></label>
+                            <button class="add-button" type="submit" aria-label="เพิ่มเป้าหมาย">+</button>
+                        </form>
+                        <div class="goal-list" id="goal-list"></div>
+                        <p class="goal-hint" id="goal-hint">เป้าหมายและประวัติทั้งหมดจัดเก็บไว้ในฐานข้อมูลของคุณ</p>
+                    </section>
+                </section>
+
+                <section class="backup-tools" aria-label="สำรองและคืนค่าข้อมูล">
+                    <a class="backup-button" href="{{ url_for('export_backup') }}">ดาวน์โหลดข้อมูลสำรอง</a>
+                    <form class="backup-import-form" action="{{ url_for('import_backup') }}" method="post"
+                        enctype="multipart/form-data"
+                        onsubmit="return confirm('การคืนค่าจะแทนที่ข้อมูลส่วนตัวปัจจุบันทั้งหมด ดำเนินการต่อหรือไม่?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <label for="backup-file">เลือกไฟล์ JSON</label>
+                        <input id="backup-file" name="backup_file" type="file" accept="application/json,.json" required>
+                        <button class="backup-button" type="submit">คืนค่าข้อมูล</button>
+                    </form>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                    {% for category, message in messages %}<p class="backup-feedback {{ category }}" role="status">{{
+                        message }}</p>{% endfor %}
+                    {% endwith %}
+                </section>
+                <footer class="page-footer"><span>DAYMARK <i>·</i> YOUR PACE, YOUR
+                        PROGRESS</span><span>ข้อมูลจัดเก็บในเครื่องนี้</span></footer>
+            </div>
+        </main>
+    </div>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+    <dialog class="note-dialog" id="note-dialog" aria-labelledby="note-dialog-title">
+        <button class="mini-button note-dialog-close" id="close-note-dialog" type="button"
+            aria-label="ปิดหน้าต่าง">×</button>
+        <div class="note-dialog-top">
+            <div>
+                <p class="eyebrow">DAILY NOTE</p>
+                <h2 id="note-dialog-title">บันทึกประจำวัน</h2>
+            </div>
+        </div>
+        <p class="note-dialog-date" id="note-dialog-date"></p>
+        <div class="note-dialog-scores" id="note-dialog-scores"></div>
+        <p class="note-dialog-content" id="note-dialog-content"></p>
+        <button class="primary-button note-edit-button" id="edit-note-day" type="button">เปิดวันนี้เพื่อแก้ไข
+            <span>↗</span></button>
+    </dialog>
+    {% include 'chat_widget.html' %}
+    <script src="{{ url_for('static', filename='js/app.js', v='13') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js', v='1') }}"></script>
+</body>
+
+</html>

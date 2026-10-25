@@ -1,0 +1,17 @@
+{% extends "auth_base.html" %}
+{% block title %}เข้าสู่ระบบ | Daymark{% endblock %}
+{% block content %}
+<p class="auth-eyebrow">WELCOME BACK</p>
+<h2 class="auth-heading">เข้าสู่ระบบ</h2>
+<p class="auth-subtitle">ลงชื่อเข้าใช้เพื่อเปิดพื้นที่ Daymark ของคุณ</p>
+{% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+<form method="post" action="{{ url_for('authenticate', next=request.args.get('next', '')) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="auth-label" for="identifier">ชื่อผู้ใช้หรืออีเมล</label>
+    <input class="auth-input" id="identifier" name="identifier" autocomplete="username" required autofocus>
+    <label class="auth-label" for="password">รหัสผ่าน</label>
+    <input class="auth-input" id="password" name="password" type="password" autocomplete="current-password" required>
+    <button class="auth-submit" type="submit">เข้าสู่ระบบ</button>
+</form>
+<p class="auth-switch">ยังไม่มีบัญชี? <a href="{{ url_for('register') }}">สมัครสมาชิก</a></p>
+{% endblock %}

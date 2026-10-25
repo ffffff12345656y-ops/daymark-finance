@@ -1,0 +1,739 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10B981">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script src="{{ url_for('static', filename='js/theme.js', v='1') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}" defer></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Daymark | การเงิน</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css', v='12') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/finance.css', v='4') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/light-theme.css', v='5') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css', v='1') }}">
+</head>
+
+<body class="student-body finance-body">
+    <header class="student-topbar">
+        <a class="student-brand" href="{{ url_for('student.student_dashboard') }}"><span
+                class="brand-symbol">d/</span><span>DAYMARK <small>STUDENT SPACE</small></span></a>
+        {% set primary_nav_active = 'finance' %}
+        {% include 'primary_nav.html' %}
+        <a class="mode-switch-link" href="{{ url_for('student.student_dashboard') }}"><span
+                class="mode-switch-icon">◷</span><span>Student Mode</span></a>
+        <span class="student-account-name">{{ current_user.username }}</span>
+        <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token"
+                value="{{ csrf_token }}"><button class="student-logout" type="submit">ออกจากระบบ</button></form>
+    </header>
+
+    <main class="student-main finance-main">
+        <section class="student-heading finance-heading">
+            <div>
+                <p class="student-eyebrow">MONEY, WITH INTENTION</p>
+                <h1>การเงินของฉัน<span>.</span></h1>
+                <p class="student-subtitle">บันทึกการใช้จ่ายและติดตามเป้าหมายการออม</p>
+            </div>
+            <form class="finance-filter" action="{{ url_for('finance') }}" method="get">
+                <label><span>เดือน</span><input type="month" name="month" value="{{ selected_month }}"></label>
+                <label><span>หรือเลือกวัน</span><input type="date" name="day" value="{{ selected_date }}"></label>
+                <button class="finance-button secondary-button" type="submit">ดูข้อมูล</button>
+                <a class="clear-filter"
+                    href="{{ url_for('finance', month=next_finance_day[:7], day=next_finance_day) }}">วันถัดไป →</a>
+                {% if selected_date %}<a class="clear-filter"
+                    href="{{ url_for('finance', month=selected_month) }}">ล้างตัวกรอง</a>{% endif %}
+            </form>
+        </section>
+
+        {% for category, message in messages %}
+        <p class="finance-message {{ category }}" role="status">{{ message }}</p>
+        {% endfor %}
+
+        <div class="finance-page-tabs" role="tablist" aria-label="มุมมองการเงิน">
+            <button id="finance-dashboard-tab" class="finance-page-tab" type="button" role="tab"
+                aria-controls="finance-dashboard-panel" aria-selected="true">แดชบอร์ด &amp; บันทึกรายวัน</button>
+            <button id="finance-history-tab" class="finance-page-tab" type="button" role="tab"
+                aria-controls="finance-history-panel" aria-selected="false">ประวัติรายการ &amp; รายงาน</button>
+        </div>
+
+        <div id="finance-dashboard-panel" role="tabpanel" aria-labelledby="finance-dashboard-tab">
+            <details class="finance-reset-tools">
+                <summary>เครื่องมือทดสอบ: รีเซ็ตข้อมูลการเงิน</summary>
+                <p>ปุ่มรีเซ็ตลบเฉพาะชุดข้อมูลที่เลือกและไม่สามารถกู้คืนได้ ส่วนปุ่มปิดงบจะบันทึก Snapshot แบบครั้งเดียว
+                </p>
+                <div class="finance-reset-actions">
+                    <form action="{{ url_for('force_month_end_snapshot') }}" method="post"
+                        onsubmit="return confirm('ยืนยันปิดงบเดือนที่เลือกทันที? Snapshot ที่สร้างแล้วจะไม่ถูกเขียนทับ')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                        <button class="finance-button secondary-button" type="submit">กดปิดงบเดือนก่อนหน้าทันที (Force
+                            Month-End Snapshot)</button>
+                    </form>
+                    <form action="{{ url_for('reset_finance_data', dataset='transactions') }}" method="post"
+                        onsubmit="return confirm('ยืนยันลบรายการรายรับ-รายจ่ายทั้งหมดของบัญชีนี้หรือไม่?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                        <button class="finance-button reset-button" type="submit">รีเซ็ตรายรับ-รายจ่าย</button>
+                    </form>
+                    <form action="{{ url_for('reset_finance_data', dataset='daily-expenses') }}" method="post"
+                        onsubmit="return confirm('ยืนยันลบประวัติใช้จ่ายงบรายวันทั้งหมดของบัญชีนี้หรือไม่?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                        <button class="finance-button reset-button" type="submit">รีเซ็ตประวัติใช้จ่ายรายวัน</button>
+                    </form>
+                    <form action="{{ url_for('reset_finance_data', dataset='daily-budget') }}" method="post"
+                        onsubmit="return confirm('ยืนยันรีเซ็ตงบรายวันและประวัติอัตราทั้งหมดหรือไม่? งบจะกลับเป็น 150 บาท/วัน')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                        <button class="finance-button reset-button" type="submit">รีเซ็ตงบรายวันเป็น 150 บาท</button>
+                    </form>
+                    <form action="{{ url_for('reset_finance_data', dataset='savings-goals') }}" method="post"
+                        onsubmit="return confirm('ยืนยันลบเป้าหมายการออมทั้งหมดของบัญชีนี้หรือไม่?')">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                        <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                        <button class="finance-button reset-button" type="submit">รีเซ็ตเป้าหมายการออม</button>
+                    </form>
+                </div>
+            </details>
+
+            <section class="finance-summary" aria-label="สรุปการเงิน">
+                <article class="finance-summary-card income-card">
+                    <div class="summary-label"><span class="summary-mark">↗</span><span>รายรับรวม</span></div>
+                    <strong>฿{{ "{:,.2f}".format(income_total) }}</strong>
+                    <small>เดือนที่เลือก</small>
+                </article>
+                <article class="finance-summary-card expense-card">
+                    <div class="summary-label"><span class="summary-mark">↘</span><span>รายจ่ายรวม</span></div>
+                    <strong>฿{{ "{:,.2f}".format(expense_total) }}</strong>
+                    <small>รายการในเดือนที่เลือก</small>
+                </article>
+                <article class="finance-summary-card allocation-card">
+                    <div class="summary-label"><span
+                            class="summary-mark">฿</span><span>งบจัดสรรคงเหลือถึงสิ้นเดือน</span>
+                    </div>
+                    <strong>฿{{ "{:,.2f}".format(budget_allocation) }}</strong>
+                    <small>งบสำหรับ {{ budget_day_count }} วันที่เหลือจนสิ้นเดือน</small>
+                </article>
+                <article class="finance-summary-card balance-card">
+                    <div class="summary-label"><span class="summary-mark">＝</span><span>ยอดเงินคงเหลือสุทธิ</span></div>
+                    <strong>฿{{ "{:,.2f}".format(balance_after_budget) }}</strong>
+                    <small>กันงบหมวดหมู่ ฿{{ "{:,.2f}".format(category_budget_reserved) }} · ไม่หักรายจ่ายในวงเงินซ้ำ ·
+                        หักงบรายวัน รายจ่ายนอกงบ/ส่วนเกิน และยอดใช้จริงจากงบวันก่อน</small>
+                </article>
+                <article
+                    class="finance-summary-card daily-budget-card{% if daily_budget_warning %} budget-warning{% endif %}">
+                    <div class="summary-label"><span class="summary-mark">฿</span><span>งบวันที่ {{ finance_day
+                            }}</span>
+                    </div>
+                    <small>งบตั้งต้น ฿{{ "{:,.2f}".format(daily_budget_limit) }}</small>
+                    <div class="daily-budget-stats">
+                        <span>ใช้ไปแล้ว <strong>฿{{ "{:,.2f}".format(daily_spent_today) }}</strong></span>
+                        <span>งบเหลือวันนี้ <strong>฿{{ "{:,.2f}".format(daily_budget_remaining)
+                                }}</strong></span>
+                        {% if daily_budget_overage > 0 %}
+                        <span>เกินงบ <strong>฿{{ "{:,.2f}".format(daily_budget_overage) }}</strong></span>
+                        {% endif %}
+                    </div>
+                    <div class="daily-budget-track" role="progressbar" aria-label="ใช้ไปจากงบประมาณวันนี้"
+                        aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ daily_budget_percent|round|int }}">
+                        <span style="width: {{ daily_budget_percent }}%"></span>
+                    </div>
+                    {% if daily_budget_expenses %}
+                    <details class="daily-expense-manage">
+                        <summary>จัดการรายการใช้จ่ายวันนี้ ({{ daily_budget_expenses|length }})</summary>
+                        <div class="daily-expense-list">
+                            {% for expense in daily_budget_expenses %}
+                            <div class="daily-expense-item">
+                                <form action="{{ url_for('update_daily_budget_expense', expense_id=expense.id) }}"
+                                    method="post" class="daily-expense-edit-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                    <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                                    <label class="finance-field"><span>จำนวนเงิน (บาท)</span>
+                                        <input name="amount" type="number" min="0.01" max="1000000000" step="0.01"
+                                            value="{{ '%.2f'|format(expense.amount) }}" required></label>
+                                    <button class="finance-button secondary-button" type="submit">บันทึก</button>
+                                </form>
+                                <form action="{{ url_for('delete_daily_budget_expense', expense_id=expense.id) }}"
+                                    method="post" onsubmit="return confirm('ลบรายการใช้จ่ายนี้หรือไม่?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                    <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                                    <button class="text-danger daily-expense-delete" type="submit">ลบ</button>
+                                </form>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                    {% endif %}
+                </article>
+            </section>
+
+            <section class="lifetime-overview" aria-label="ภาพรวมเงินออมระยะยาว">
+                <div class="lifetime-heading">
+                    <div>
+                        <p class="student-eyebrow">LONG-TERM SAVINGS</p>
+                        <h2>คลังเงินออมสะสม</h2>
+                    </div>
+                    <span>{{ tracked_months }} เดือนที่ปิดงบแล้ว</span>
+                </div>
+                <div class="projection-controls">
+                    <label for="projection-months">คาดการณ์ล่วงหน้า</label>
+                    <div>
+                        <input id="projection-months" name="projection_months" type="number" min="1" max="120" step="1"
+                            list="projection-month-presets" value="{{ projection_months }}"
+                            data-current-savings="{{ lifetime_savings }}"
+                            data-average-monthly="{{ average_monthly_savings }}"
+                            aria-describedby="projection-range-note">
+                        <datalist id="projection-month-presets">
+                            <option value="1">
+                            <option value="3">
+                            <option value="6">
+                            <option value="12">
+                        </datalist>
+                        <span>เดือน</span>
+                    </div>
+                    <small id="projection-range-note">เลือก 1, 3, 6 หรือ 12 เดือน หรือระบุ 1–120 เดือน</small>
+                </div>
+                <div class="lifetime-cards">
+                    <article class="lifetime-card lifetime-total">
+                        <span>ยอดเงินออมสะสมรวม</span>
+                        <strong>฿{{ "{:,.2f}".format(lifetime_savings) }}</strong>
+                        <small>จัดสรรไว้ในเป้าหมาย ฿{{ "{:,.2f}".format(allocated_savings) }}</small>
+                        <small>พร้อมจัดสรร ฿{{ "{:,.2f}".format(unallocated_savings) }}</small>
+                        <details class="vault-withdraw-details">
+                            <summary class="finance-button secondary-button">ถอนเงินสะสม</summary>
+                            <form action="{{ url_for('withdraw_lifetime_savings') }}" method="post"
+                                class="vault-withdraw-form"
+                                onsubmit="return confirm('ยืนยันถอนเงินจากคลังเงินออมสะสมหรือไม่?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <label class="finance-field"><span>จำนวนเงินที่ต้องการถอน (สูงสุด ฿{{
+                                        "{:,.2f}".format(unallocated_savings) }})</span>
+                                    <input name="amount" type="number" min="0.01" max="{{ unallocated_savings }}"
+                                        step="0.01" inputmode="decimal" placeholder="0.00" required></label>
+                                <label class="finance-field"><span>เหตุผล / รายละเอียด</span>
+                                    <input name="note" maxlength="500" placeholder="เช่น ค่าใช้จ่ายฉุกเฉิน"></label>
+                                <label class="finance-field"><span>รูปแบบการถอน</span>
+                                    <select name="withdrawal_type" required>
+                                        <option value="expense">ถอนเพื่อใช้จ่ายจริง (Expense)</option>
+                                        <option value="transfer_income">โอนกลับเป็นรายรับหมุนเวียนเดือนนี้ (Transfer to
+                                            Income)</option>
+                                    </select></label>
+                                <button class="finance-button primary-button" type="submit">บันทึกการถอนเงิน</button>
+                            </form>
+                        </details>
+                    </article>
+                    <article class="lifetime-card lifetime-rate">
+                        <span>อัตราการออมเฉลี่ย</span>
+                        <strong>{{ "%.1f"|format(average_savings_rate) }}%</strong>
+                        <small>{{ savings_rate_basis }}</small>
+                    </article>
+                    <article class="lifetime-card lifetime-projection">
+                        <span>คาดการณ์อีก <span data-projection-month-label>{{ projection_months }}</span> เดือน</span>
+                        <strong data-projection-total>฿{{ "{:,.2f}".format(savings_projection) }}</strong>
+                        <small>{{ average_savings_basis }} · ฿{{ "{:,.2f}".format(average_monthly_savings) }}
+                            ต่อเดือน</small>
+                    </article>
+                </div>
+                <p class="projection-message">หากรักษาอัตราการออมระดับนี้ ในอีก
+                    <span data-projection-month-label>{{ projection_months }}</span> เดือนข้างหน้า จะมีเงินเก็บรวมประมาณ
+                    <strong data-projection-total>฿{{ "{:,.2f}".format(savings_projection) }}</strong>
+                </p>
+            </section>
+
+            <div class="finance-content-grid">
+                <section class="finance-panel quick-add-panel" aria-labelledby="quick-add-title">
+                    <div class="finance-section-heading">
+                        <div>
+                            <p class="student-eyebrow">QUICK ADD</p>
+                            <h2 id="quick-add-title">บันทึกรายการ</h2>
+                        </div>
+                        <span class="panel-icon">＋</span>
+                    </div>
+                    <div class="finance-record-tabs" role="tablist" aria-label="รูปแบบการบันทึก">
+                        <button id="daily-budget-tab" class="finance-record-tab" type="button" role="tab"
+                            aria-controls="daily-budget-panel" aria-selected="true">งบประมาณรายวัน</button>
+                        <button id="category-transactions-tab" class="finance-record-tab" type="button" role="tab"
+                            aria-controls="category-transactions-panel"
+                            aria-selected="false">รายรับ-รายจ่ายตามหมวดหมู่</button>
+                    </div>
+                    <div id="daily-budget-panel" class="finance-record-panel" role="tabpanel"
+                        aria-labelledby="daily-budget-tab">
+                        <p class="finance-record-description">กำหนดงบที่จัดสรรต่อวัน และบันทึกยอดใช้จริงของวันที่เลือก
+                            งบที่เหลือจากวันก่อนหน้าจะทบกลับเข้าไปในยอดเงินคงเหลือสุทธิ</p>
+                        <form action="{{ url_for('update_daily_budget') }}" method="post" class="finance-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <label class="finance-field"><span>งบประมาณต่อวัน (บาท)</span><input name="daily_limit"
+                                    type="number" min="0" max="1000000000" step="0.01" value="{{ daily_budget_limit }}"
+                                    required></label>
+                            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                            <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                            <button class="finance-button primary-button" type="submit">บันทึกงบรายวัน
+                                <span>↗</span></button>
+                        </form>
+                        <form action="{{ url_for('create_daily_budget_expense') }}" method="post"
+                            class="finance-form daily-expense-log">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <label class="finance-field"><span>บันทึกค่าใช้จ่ายวันที่ {{ finance_day }}</span>
+                                <input name="expense_amount" type="number" min="0.01" max="1000000000" step="0.01"
+                                    inputmode="decimal" placeholder="0.00" required></label>
+                            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                            <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                            <button class="finance-button primary-button" type="submit">บันทึกค่าใช้จ่าย
+                                <span>↗</span></button>
+                        </form>
+                    </div>
+                    <div id="category-transactions-panel" class="finance-record-panel" role="tabpanel"
+                        aria-labelledby="category-transactions-tab" hidden>
+                        <form action="{{ url_for('create_finance_transaction') }}" method="post" class="finance-form">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <div class="type-control">
+                                <label><input type="radio" name="type" value="expense"
+                                        checked><span>รายจ่าย</span></label>
+                                <label><input type="radio" name="type" value="income"><span>รายรับ</span></label>
+                            </div>
+                            <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount" type="number"
+                                    min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required></label>
+                            <label class="finance-field"><span>หมวดหมู่</span><input name="category" maxlength="60"
+                                    placeholder="เช่น อาหาร, ค่าเดินทาง" required></label>
+                            <label class="finance-field"><span>วันที่</span><input name="transaction_date" type="date"
+                                    value="{{ selected_date or (selected_month ~ '-01') }}" required></label>
+                            <label class="finance-field"><span>บันทึก <small>ไม่บังคับ</small></span><input name="note"
+                                    maxlength="500" placeholder="รายละเอียดเพิ่มเติม"></label>
+                            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                            <button class="finance-button primary-button" type="submit">บันทึกรายการ
+                                <span>↗</span></button>
+                        </form>
+                    </div>
+                </section>
+
+            </div>
+
+            <section class="finance-panel recurring-income-panel" aria-labelledby="expected-income-title">
+                <div class="finance-section-heading">
+                    <div>
+                        <p class="student-eyebrow">EXPECTED / PENDING INCOMES</p>
+                        <h2 id="expected-income-title">เงินคาดว่าจะได้รับ</h2>
+                    </div>
+                    <span class="section-period">ยังไม่นับเป็นรายรับจนกว่าจะได้รับเงินจริง</span>
+                </div>
+                <form action="{{ url_for('create_expected_income') }}" method="post"
+                    class="finance-form recurring-income-create">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                    <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                    <label class="finance-field"><span>ชื่อรายการ</span><input name="title" maxlength="100"
+                            placeholder="เช่น เงินที่พ่อจะโอน / เงินทุน" required></label>
+                    <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount" type="number"
+                            min="0.01" max="1000000000" step="0.01" inputmode="decimal" placeholder="0.00"
+                            required></label>
+                    <label class="finance-field"><span>วันที่คาดว่าจะได้รับ</span><input name="expected_date"
+                            type="date" value="{{ today_date }}" required></label>
+                    <button class="finance-button primary-button" type="submit">เพิ่มรายการรอรับ <span>＋</span></button>
+                </form>
+                {% if expected_incomes %}
+                <div class="recurring-income-list">
+                    {% for income in expected_incomes %}
+                    <article class="recurring-income-item">
+                        <div>
+                            <strong>{{ income.title }}</strong>
+                            <p class="transaction-note">฿{{ "{:,.2f}".format(income.amount) }} · คาดว่าจะได้รับ {{
+                                income.expected_date }}{% if income.expected_date <= today_date %} · ถึงกำหนด/ค้างรับ{%
+                                    endif %}</p>
+                        </div>
+                        <div>
+                            <form action="{{ url_for('receive_expected_income', income_id=income.id) }}" method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                <button class="finance-button primary-button" type="submit">ได้รับเงินแล้ว
+                                    (Received)</button>
+                            </form>
+                            <form action="{{ url_for('keep_expected_income_pending', income_id=income.id) }}"
+                                method="post">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                                <button class="finance-button secondary-button" type="submit">ยังไม่ได้รับ ·
+                                    คงสถานะรอ</button>
+                            </form>
+                            <details class="category-budget-edit">
+                                <summary>เลื่อนวันคาดว่าจะได้รับ</summary>
+                                <form action="{{ url_for('postpone_expected_income', income_id=income.id) }}"
+                                    method="post" class="finance-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                    <input type="hidden" name="day_filter" value="{{ finance_day }}">
+                                    <label class="finance-field"><span>วันใหม่</span><input name="expected_date"
+                                            type="date" value="{{ tomorrow_date }}" required></label>
+                                    <button class="finance-button secondary-button" type="submit">บันทึกวันใหม่</button>
+                                </form>
+                            </details>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="finance-empty compact-empty">ยังไม่มีเงินคาดว่าจะได้รับที่รอติดตาม</p>
+                {% endif %}
+            </section>
+
+            <section class="finance-panel recurring-income-panel" aria-labelledby="recurring-income-title">
+                <div class="finance-section-heading">
+                    <div>
+                        <p class="student-eyebrow">RECURRING INCOME</p>
+                        <h2 id="recurring-income-title">ตั้งค่ารายรับประจำ</h2>
+                    </div>
+                    <span class="section-period">สร้างรายการอัตโนมัติเมื่อถึงวันที่กำหนด</span>
+                </div>
+                <form action="{{ url_for('create_recurring_income') }}" method="post"
+                    class="finance-form recurring-income-create">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                    <label class="finance-field"><span>ชื่อรายการ</span><input name="title" maxlength="100"
+                            placeholder="เช่น เงินเดือน / ค่าขนม" required></label>
+                    <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount" type="number"
+                            min="0.01" max="1000000000" step="0.01" inputmode="decimal" placeholder="0.00"
+                            required></label>
+                    <label class="finance-field"><span>วันที่รับเงิน</span><input name="day_of_month" type="number"
+                            min="1" max="31" step="1" value="1" required></label>
+                    <button class="finance-button primary-button" type="submit">เพิ่มรายรับประจำ <span>＋</span></button>
+                </form>
+                {% if recurring_incomes %}
+                <div class="recurring-income-list">
+                    {% for income in recurring_incomes %}
+                    <article
+                        class="recurring-income-item{% if not income.is_active %} recurring-income-disabled{% endif %}">
+                        <form action="{{ url_for('update_recurring_income', income_id=income.id) }}" method="post"
+                            class="finance-form recurring-income-edit">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                            <label class="finance-field"><span>ชื่อรายการ</span><input name="title" maxlength="100"
+                                    value="{{ income.title }}" required></label>
+                            <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount" type="number"
+                                    min="0.01" max="1000000000" step="0.01" value="{{ income.amount }}"
+                                    required></label>
+                            <label class="finance-field"><span>วันที่</span><input name="day_of_month" type="number"
+                                    min="1" max="31" step="1" value="{{ income.day_of_month }}" required></label>
+                            <label class="finance-field"><span>สถานะ</span><select name="is_active">
+                                    <option value="1" {% if income.is_active %}selected{% endif %}>เปิดใช้งาน</option>
+                                    <option value="0" {% if not income.is_active %}selected{% endif %}>ปิดใช้งาน
+                                    </option>
+                                </select></label>
+                            <button class="finance-button secondary-button" type="submit">บันทึกการแก้ไข</button>
+                        </form>
+                        <form action="{{ url_for('delete_recurring_income', income_id=income.id) }}" method="post"
+                            onsubmit="return confirm('ลบรายการรายรับประจำนี้หรือไม่? รายการที่บันทึกไปแล้วจะยังคงอยู่')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                            <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                            <button class="text-danger recurring-income-delete" type="submit">ลบรายการ</button>
+                        </form>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="finance-empty compact-empty">ยังไม่มีรายรับประจำที่ตั้งค่าไว้</p>
+                {% endif %}
+            </section>
+
+            <section class="finance-panel category-budget-panel" aria-labelledby="category-budget-title">
+                <div class="finance-section-heading">
+                    <div>
+                        <p class="student-eyebrow">MONTHLY LIMITS</p>
+                        <h2 id="category-budget-title">งบประมาณรายหมวดหมู่</h2>
+                    </div>
+                    <span class="section-period">{{ selected_month }}</span>
+                </div>
+                <form action="{{ url_for('create_category_budget') }}" method="post"
+                    class="finance-form category-budget-create">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label class="finance-field"><span>หมวดหมู่</span><input name="category_name" maxlength="60"
+                            placeholder="เช่น ค่าน้ำมัน" required></label>
+                    <label class="finance-field"><span>วงเงินต่อเดือน (บาท)</span><input name="monthly_limit"
+                            type="number" min="0" max="1000000000" step="0.01" inputmode="decimal" placeholder="0.00"
+                            required></label>
+                    <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                    <button class="finance-button primary-button" type="submit">เพิ่มหรือกำหนดงบ <span>＋</span></button>
+                </form>
+                {% if category_budgets %}
+                <div class="category-budget-list">
+                    {% for budget in category_budgets %}
+                    <article
+                        class="category-budget-item{% if budget.spent > budget.monthly_limit %} budget-warning{% endif %}">
+                        <div class="category-budget-heading">
+                            <strong>{{ budget.category_name }}</strong>
+                            <span>ใช้ไป ฿{{ "{:,.2f}".format(budget.spent) }} / ฿{{
+                                "{:,.2f}".format(budget.monthly_limit)
+                                }}</span>
+                        </div>
+                        <div class="category-budget-stats">
+                            <span>งบตั้งต้น <strong>฿{{ "{:,.2f}".format(budget.monthly_limit) }}</strong></span>
+                            <span>ใช้ไปแล้ว <strong>฿{{ "{:,.2f}".format(budget.spent) }}</strong></span>
+                            <span>คงเหลือ <strong>฿{{ "{:,.2f}".format(budget.remaining) }}</strong></span>
+                        </div>
+                        <div class="category-budget-track" role="progressbar"
+                            aria-label="ใช้ไปจากงบ{{ budget.category_name }}" aria-valuemin="0" aria-valuemax="100"
+                            aria-valuenow="{{ budget.percent|round|int }}">
+                            <span style="width: {{ budget.percent }}%"></span>
+                        </div>
+                        <details class="category-budget-edit category-expense-log">
+                            <summary>บันทึกการใช้จ่าย</summary>
+                            <form action="{{ url_for('create_category_budget_expense', budget_id=budget.id) }}"
+                                method="post" class="finance-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <label class="finance-field"><span>จำนวนเงิน (บาท)</span><input name="amount"
+                                        type="number" min="0.01" max="1000000000" step="0.01" inputmode="decimal"
+                                        placeholder="0.00" required></label>
+                                <label class="finance-field"><span>วันที่</span><input name="expense_date" type="date"
+                                        value="{{ today_date }}" required></label>
+                                <label class="finance-field"><span>รายละเอียด <small>ไม่บังคับ</small></span>
+                                    <input name="note" maxlength="500" placeholder="เช่น เติมน้ำมัน"></label>
+                                <button class="finance-button primary-button" type="submit">บันทึกรายจ่าย
+                                    <span>↗</span></button>
+                            </form>
+                        </details>
+                        <details class="category-budget-edit">
+                            <summary>แก้ไขงบ</summary>
+                            <form action="{{ url_for('update_category_budget', budget_id=budget.id) }}" method="post"
+                                class="finance-form">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <label class="finance-field"><span>หมวดหมู่</span><input name="category_name"
+                                        maxlength="60" value="{{ budget.category_name }}" required></label>
+                                <label class="finance-field"><span>วงเงินต่อเดือน (บาท)</span><input
+                                        name="monthly_limit" type="number" min="0" max="1000000000" step="0.01"
+                                        value="{{ budget.monthly_limit }}" required></label>
+                                <input type="hidden" name="month_filter" value="{{ selected_month }}">
+                                <button class="finance-button secondary-button" type="submit">บันทึกการแก้ไข</button>
+                            </form>
+                            <form action="{{ url_for('delete_category_budget', budget_id=budget.id) }}" method="post"
+                                onsubmit="return confirm('ลบงบหมวดหมู่นี้หรือไม่?')">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                <button class="text-danger" type="submit">ลบงบนี้</button>
+                            </form>
+                        </details>
+                    </article>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="finance-empty compact-empty">ยังไม่มีงบรายหมวดหมู่สำหรับเดือนนี้</p>
+                {% endif %}
+            </section>
+
+        </div>
+
+        <div id="finance-history-panel" role="tabpanel" aria-labelledby="finance-history-tab" hidden>
+            <div class="growth-chart-panel">
+                <div class="growth-chart-heading">
+                    <div>
+                        <h3>การเติบโตของเงินเก็บ</h3>
+                        <p>ยอดออมสะสมรายเดือน · {{ growth_year }}</p>
+                    </div>
+                    <span>฿</span>
+                </div>
+                <div class="growth-chart-wrap"><canvas id="savings-growth-chart" role="img"
+                        aria-label="กราฟเส้นแสดงการเติบโตของเงินออมสะสมตั้งแต่มกราคมถึงธันวาคม {{ growth_year }}"></canvas>
+                </div>
+                <script id="savings-growth-data"
+                    type="application/json">{{ {"labels": growth_labels, "values": growth_values}|tojson }}</script>
+            </div>
+
+            <section class="finance-panel category-panel" aria-labelledby="category-title">
+                <div class="finance-section-heading">
+                    <div>
+                        <p class="student-eyebrow">SPENDING MIX</p>
+                        <h2 id="category-title">รายจ่ายตามหมวดหมู่</h2>
+                    </div>
+                    <span class="section-period">{{ selected_month }}</span>
+                </div>
+                {% if categories %}
+                <div class="category-list">
+                    {% for item in categories %}
+                    <div class="category-row">
+                        <div class="category-meta"><span>{{ item.category }}</span><strong>฿{{
+                                "{:,.2f}".format(item.total) }} <small>{{ "%.0f"|format(item.percent)
+                                    }}%</small></strong></div>
+                        <div class="category-track"><span style="width: {{ [item.percent, 100]|min }}%"></span></div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="finance-empty compact-empty">ยังไม่มีรายจ่ายในช่วงเวลานี้</p>
+                {% endif %}
+            </section>
+
+            <section class="finance-panel transactions-panel" aria-labelledby="transactions-title">
+                <div class="finance-section-heading">
+                    <div>
+                        <p class="student-eyebrow">RECENT ACTIVITY</p>
+                        <h2 id="transactions-title">รายการล่าสุด</h2>
+                    </div>
+                    <span class="section-period">ทุกรายการในเดือนนี้ · ใหม่ไปเก่า</span>
+                </div>
+                {% if transactions %}
+                <div class="finance-table-wrap">
+                    <table class="finance-table">
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>รายการ</th>
+                                <th>หมวดหมู่</th>
+                                <th class="amount-cell">จำนวน</th>
+                                <th>จัดการ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in transactions %}
+                            <tr{% if item.is_budget_allocation or item.is_daily_savings_return or
+                                item.is_category_budget_return or item.is_savings_withdrawal %}
+                                class="budget-allocation-row" {% endif %}>
+                                <td data-label="วันที่">{{ item.created_at[:10] }}</td>
+                                <td data-label="รายการ"><span class="type-badge {{ item.type }}">{{ 'รายรับ' if
+                                        item.type ==
+                                        'income' else 'รายจ่าย' }}</span>{% if item.note %}<small
+                                        class="transaction-note">{{ item.note }}</small>{% endif %}</td>
+                                <td data-label="หมวดหมู่">{{ item.category }}</td>
+                                <td data-label="จำนวน" class="amount-cell {{ item.type }}">{{ '+' if item.type ==
+                                    'income'
+                                    else '−' }}฿{{ "{:,.2f}".format(item.amount) }}</td>
+                                <td data-label="จัดการ">
+                                    {% if item.is_budget_allocation or item.is_daily_savings_return or
+                                    item.is_category_budget_return or item.is_savings_withdrawal %}<span
+                                        class="budget-source-label">{{
+                                        'รายการถอนเงินออม' if item.is_savings_withdrawal else
+                                        ('รายการเงินเหลืออัตโนมัติ' if
+                                        item.is_daily_savings_return or item.is_category_budget_return else
+                                        'รายการคำนวณ')
+                                        }}</span>{%
+                                    else %}
+                                    <details class="row-actions">
+                                        <summary aria-label="จัดการรายการ">•••</summary>
+                                        <div class="row-action-content">
+                                            <form
+                                                action="{{ url_for('update_finance_transaction', transaction_id=item.id) }}"
+                                                method="post" class="inline-edit-form">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input
+                                                    type="hidden" name="month_filter" value="{{ selected_month }}">
+                                                <label>ประเภท<select name="type">
+                                                        <option value="expense" {% if item.type=='expense' %}selected{%
+                                                            endif %}>รายจ่าย</option>
+                                                        <option value="income" {% if item.type=='income' %}selected{%
+                                                            endif %}>รายรับ</option>
+                                                    </select></label>
+                                                <label>จำนวน<input name="amount" type="number" min="0.01" step="0.01"
+                                                        value="{{ item.amount }}" required></label>
+                                                <label>หมวดหมู่<input name="category" maxlength="60"
+                                                        value="{{ item.category }}" required></label>
+                                                <label>วันที่<input name="transaction_date" type="date"
+                                                        value="{{ item.created_at[:10] }}" required></label>
+                                                <label>บันทึก<input name="note" maxlength="500"
+                                                        value="{{ item.note }}"></label>
+                                                <button class="finance-button secondary-button"
+                                                    type="submit">บันทึกการแก้ไข</button>
+                                            </form>
+                                            <form
+                                                action="{{ url_for('delete_finance_transaction', transaction_id=item.id) }}"
+                                                method="post" onsubmit="return confirm('ลบรายการนี้หรือไม่?')">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input
+                                                    type="hidden" name="month_filter" value="{{ selected_month }}">
+                                                <button class="text-danger" type="submit">ลบรายการ</button>
+                                            </form>
+                                        </div>
+                                    </details>
+                                    {% endif %}
+                                </td>
+                                </tr>
+                                {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="finance-empty">ยังไม่มีรายการในช่วงเวลานี้ เริ่มบันทึกรายรับหรือรายจ่ายได้จากแบบฟอร์มด้านบน
+                </p>
+                {% endif %}
+            </section>
+        </div>
+
+        <section class="finance-panel savings-panel" aria-labelledby="savings-title">
+            <div class="finance-section-heading">
+                <div>
+                    <p class="student-eyebrow">SAVE FOR WHAT MATTERS</p>
+                    <h2 id="savings-title">เป้าหมายการออม</h2>
+                </div>
+                <button class="finance-button primary-button" id="open-savings-goal-dialog" type="button">
+                    <span aria-hidden="true">＋</span> เพิ่มเป้าหมายใหม่
+                </button>
+            </div>
+            <dialog class="savings-goal-dialog" id="savings-goal-dialog" aria-labelledby="create-savings-goal-title">
+                <form action="{{ url_for('create_savings_goal') }}" method="post" class="goal-create-form">
+                    <div class="dialog-heading">
+                        <h2 id="create-savings-goal-title">เพิ่มเป้าหมายการออม</h2>
+                        <button class="dialog-close" type="button" data-close-savings-goal-dialog
+                            aria-label="ปิดหน้าต่าง">×</button>
+                    </div>
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label class="finance-field"><span>ชื่อเป้าหมาย</span><input name="title" maxlength="100"
+                            placeholder="เช่น เงินสำรองฉุกเฉิน" required></label>
+                    <label class="finance-field"><span>ยอดเป้าหมาย</span><input name="target_amount" type="number"
+                            min="0.01" step="0.01" inputmode="decimal" placeholder="0.00" required></label>
+                    <label class="finance-field"><span>กำหนดวัน <small>ไม่บังคับ</small></span><input name="deadline"
+                            type="date"></label>
+                    <div class="dialog-actions">
+                        <button class="finance-button secondary-button" type="button"
+                            data-close-savings-goal-dialog>ยกเลิก</button>
+                        <button class="finance-button primary-button" type="submit">เพิ่มเป้าหมาย
+                            <span>＋</span></button>
+                    </div>
+                </form>
+            </dialog>
+            {% if savings_goals %}
+            <section class="savings-goal-group" aria-labelledby="in-progress-goals-title">
+                <div class="savings-group-heading">
+                    <h3 id="in-progress-goals-title">เป้าหมายที่กำลังออม <span>IN PROGRESS</span></h3>
+                </div>
+                <div class="savings-list">
+                    {% set in_progress_count = namespace(value=0) %}
+                    {% for goal in savings_goals if goal.current_amount < goal.target_amount %} {% set
+                        in_progress_count.value=in_progress_count.value + 1 %} {% include 'savings_goal_card.html' %} {%
+                        endfor %} {% if in_progress_count.value==0 %} <p class="finance-empty compact-empty">
+                        ไม่มีเป้าหมายที่กำลังออม</p>
+                        {% endif %}
+                </div>
+            </section>
+            <section class="savings-goal-group completed-goal-group" aria-labelledby="completed-goals-title">
+                <div class="savings-group-heading">
+                    <h3 id="completed-goals-title">เป้าหมายที่สำเร็จแล้ว <span>COMPLETED</span></h3>
+                </div>
+                <div class="savings-list">
+                    {% set completed_count = namespace(value=0) %}
+                    {% for goal in savings_goals if goal.current_amount >= goal.target_amount %}
+                    {% set completed_count.value = completed_count.value + 1 %}
+                    {% include 'savings_goal_card.html' %}
+                    {% endfor %}
+                    {% if completed_count.value == 0 %}
+                    <p class="finance-empty compact-empty">ยังไม่มีเป้าหมายที่สำเร็จ</p>
+                    {% endif %}
+                </div>
+            </section>
+            {% else %}
+            <p class="finance-empty">ยังไม่มีเป้าหมายการออม เพิ่มเป้าหมายแรกเพื่อเริ่มติดตามความคืบหน้า</p>
+            {% endif %}
+        </section>
+
+        <footer class="student-footer"><span>DAYMARK <i>·</i>
+                FINANCE</span><span>ข้อมูลการเงินเป็นข้อมูลส่วนตัวของบัญชีนี้</span></footer>
+    </main>
+    {% include 'chat_widget.html' %}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js" defer></script>
+    <script src="{{ url_for('static', filename='js/finance.js', v='4') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/chat.js', v='1') }}" defer></script>
+</body>
+
+</html>

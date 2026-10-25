@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10B981">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script src="{{ url_for('static', filename='js/theme.js', v='1') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}" defer></script>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>Daymark | Student Mode</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/student.css', v='13') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/light-theme.css', v='5') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/chat.css', v='1') }}">
+</head>
+
+<body class="student-body">
+    <header class="student-topbar">
+        <a class="student-brand" href="/student"><span class="brand-symbol">d/</span><span>DAYMARK <small>STUDENT
+                    SPACE</small></span></a>
+        {% set primary_nav_active = 'student' %}
+        {% include 'primary_nav.html' %}
+        <a class="mode-switch-link" href="/" aria-label="กลับไปโหมด Habit Tracker"><span
+                class="mode-switch-icon">◷</span><span>Habit Mode</span></a>
+        <span class="student-account-name">{{ current_user.username }}</span>
+        <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token"
+                value="{{ csrf_token }}"><button class="student-logout" type="submit">ออกจากระบบ</button></form>
+    </header>
+
+    <main class="student-main">
+        <section class="student-heading">
+            <div>
+                <p class="student-eyebrow">PLAN WITH INTENTION</p>
+                <h1>พื้นที่เรียนของฉัน<span>.</span></h1>
+                <p class="student-subtitle">รวมงาน ตารางเรียน โน้ต และเป้าหมายการเรียนไว้ในที่เดียว</p>
+            </div>
+            <div class="student-date-chip"><span class="date-chip-mark"></span><span id="today-label">วันนี้</span>
+            </div>
+        </section>
+
+        <section class="student-stat-grid" aria-label="ภาพรวมการเรียน">
+            <article class="student-stat assignment-stat">
+                <div class="student-stat-top"><span>ความคืบหน้างานทั้งหมด</span><span class="stat-glyph">↗</span></div>
+                <div class="student-stat-number"><strong id="assignment-progress">0</strong><span>%</span></div>
+                <div class="student-progress-track"><span id="assignment-progress-bar"></span></div>
+                <div class="student-stat-foot"><span id="assignment-count">0 / 0 งาน</span><span>เสร็จแล้ว</span></div>
+            </article>
+            <article class="student-stat">
+                <div class="student-stat-top"><span>เกรดเฉลี่ยสะสม</span><span class="stat-glyph grade-glyph">✳</span>
+                </div>
+                <div class="student-stat-number"><strong id="current-gpa">0.00</strong><span class="stat-denom">/
+                        4.00</span></div>
+                <div class="student-target-line"><span>เป้าหมาย</span><input id="target-gpa" type="number" min="0.1"
+                        max="4" step="0.1" aria-label="เกรดเฉลี่ยเป้าหมาย"><button id="save-target-gpa" type="button"
+                        aria-label="บันทึกเกรดเป้าหมาย">✓</button></div>
+                <div class="student-progress-track gpa-track"><span id="gpa-progress-bar"></span></div>
+            </article>
+            <article class="student-stat exam-stat">
+                <div class="student-stat-top"><span>สอบครั้งถัดไป</span><span class="stat-glyph exam-glyph">◷</span>
+                </div>
+                <div class="student-stat-number exam-count-number"><strong id="next-exam-days">—</strong><span
+                        id="next-exam-unit">วัน</span></div>
+                <div class="student-stat-foot exam-foot"><span
+                        id="next-exam-title">เพิ่มวันสอบเพื่อเริ่มนับถอยหลัง</span></div>
+            </article>
+        </section>
+
+        <nav class="student-subnav" aria-label="หมวดหมู่โหมดนักเรียน">
+            <a href="#schedule" data-student-view-link="schedule">📅 ตารางเรียน <span>Schedule</span></a>
+            <a href="#grades" data-student-view-link="grades">📊 ผลการเรียน &amp; เกรด <span>Grades &amp; GPA</span></a>
+            <a href="#notes" data-student-view-link="notes">📝 สมุดโน้ต &amp; การบ้าน <span>Notes &amp; Tasks</span></a>
+        </nav>
+
+        <div class="student-module-view" id="student-view-notes" data-student-view="notes">
+            <section class="student-section assignment-section" id="assignments">
+                <div class="student-section-heading">
+                    <div>
+                        <p class="student-eyebrow">KEEP THE NEXT STEP CLEAR</p>
+                        <h2>งานและการบ้าน</h2>
+                    </div><button class="student-primary-button" id="add-assignment">＋ <span>เพิ่มงาน</span></button>
+                </div>
+                <div class="assignment-toolbar">
+                    <label for="assignment-subject-filter">แสดงงาน</label>
+                    <select id="assignment-subject-filter" class="assignment-filter" aria-label="กรองงานตามรายวิชา">
+                        <option value="all">ทุกวิชา</option>
+                    </select>
+                    <span id="assignment-filter-count" class="assignment-filter-count"></span>
+                </div>
+                <div class="table-scroll">
+                    <table class="student-table">
+                        <thead>
+                            <tr>
+                                <th>วิชา</th>
+                                <th>งาน / การบ้าน</th>
+                                <th>กำหนดส่ง</th>
+                                <th>สถานะ</th>
+                                <th>ความสำคัญ</th>
+                                <th><span class="sr-only">การจัดการ</span></th>
+                            </tr>
+                        </thead>
+                        <tbody id="assignment-rows"></tbody>
+                    </table>
+                    <div class="student-empty" id="assignments-empty" hidden>ยังไม่มีงาน เพิ่มรายการแรกเพื่อเริ่มวางแผน
+                    </div>
+                </div>
+                <div class="assignment-progress-footer">
+                    <div><strong>ความคืบหน้างานทั้งหมด</strong><span
+                            id="assignment-progress-caption">ยังไม่มีงานที่บันทึก</span></div>
+                    <div class="wide-progress-track"><span id="assignment-footer-bar"></span></div><strong
+                        class="footer-percent"><span id="assignment-footer-percent">0</span>%</strong>
+                </div>
+            </section>
+
+        </div>
+        <div class="student-module-view" id="student-view-schedule" data-student-view="schedule" hidden>
+            <section class="student-section" id="schedule">
+                <div class="student-section-heading">
+                    <div>
+                        <p class="student-eyebrow">MONDAY TO FRIDAY</p>
+                        <h2>ตารางเรียนประจำสัปดาห์</h2>
+                    </div><button class="student-outline-button" id="add-schedule">＋ เพิ่มคาบเรียน</button>
+                </div>
+                <div class="schedule-grid" id="schedule-grid"></div>
+            </section>
+        </div>
+
+        <div class="student-module-view" id="student-view-notes-details" data-student-view="notes" hidden>
+            <section class="student-two-column">
+                <section class="student-section notes-section" id="notes">
+                    <div class="student-section-heading">
+                        <div>
+                            <p class="student-eyebrow">SAVE WHAT MATTERS</p>
+                            <h2>โน้ตแยกตามวิชา</h2>
+                        </div><button class="student-outline-button" id="add-subject">＋ วิชา</button>
+                    </div>
+                    <form id="note-form" class="note-form">
+                        <label class="student-field"><span>วิชา</span><select id="note-subject"
+                                required></select></label>
+                        <label class="student-field"><span>หัวข้อ</span><input id="note-title" maxlength="180"
+                                placeholder="เช่น บทที่ 3: แรงและการเคลื่อนที่" required></label>
+                        <label class="student-field"><span>สรุปบทเรียน</span><textarea id="note-content"
+                                maxlength="20000" rows="4" placeholder="เขียนสรุปหรือสิ่งที่อยากจำ..."
+                                required></textarea></label>
+                        <div class="note-form-footer"><span id="note-status" role="status"></span><button
+                                class="student-primary-button" type="submit">บันทึกโน้ต <span>↗</span></button></div>
+                    </form>
+                    <div class="subject-chips" id="subject-chips"></div>
+                    <div class="notes-list" id="notes-list"></div>
+                    <p class="student-empty" id="notes-empty" hidden>ยังไม่มีโน้ตของวิชานี้</p>
+                </section>
+
+                <section class="student-section calendar-section" id="calendar">
+                    <div class="student-section-heading">
+                        <div>
+                            <p class="student-eyebrow">DATES THAT MATTER</p>
+                            <h2>ปฏิทินนักเรียน</h2>
+                        </div><button class="student-outline-button" id="add-calendar-event">＋ วันสำคัญ</button>
+                    </div>
+                    <div class="calendar-toolbar"><button class="calendar-arrow" id="calendar-prev" type="button"
+                            aria-label="เดือนก่อน">←</button><strong id="calendar-month-label"></strong><button
+                            class="calendar-arrow" id="calendar-next" type="button" aria-label="เดือนถัดไป">→</button>
+                    </div>
+                    <div class="student-calendar-grid" id="calendar-grid"></div>
+                    <div class="calendar-legend"><span><i class="dot-exam"></i>สอบ</span><span><i
+                                class="dot-assignment"></i>ส่งงาน</span><span><i
+                                class="dot-holiday"></i>วันหยุด</span><span><i class="dot-other"></i>อื่น ๆ</span></div>
+                    <div class="calendar-event-list" id="calendar-event-list"></div>
+                </section>
+            </section>
+        </div>
+
+        <div class="student-module-view" id="student-view-grades" data-student-view="grades" hidden>
+            <section class="student-two-column lower-student-grid">
+                <section class="student-section grades-section" id="grades">
+                    <div class="student-section-heading">
+                        <div>
+                            <p class="student-eyebrow">MEASURE YOUR PROGRESS</p>
+                            <h2>คะแนนและเกรด</h2>
+                        </div>
+                    </div>
+                    <form id="grade-form" class="grade-form">
+                        <label class="student-field"><span>วิชา</span><input id="grade-subject" maxlength="80"
+                                placeholder="ชื่อวิชา" required></label>
+                        <label class="student-field"><span>รายการประเมิน</span><input id="grade-assessment"
+                                maxlength="160" placeholder="กลางภาค / แบบฝึกหัด" required></label>
+                        <label class="student-field"><span>ได้คะแนน</span><input id="grade-score" type="number" min="0"
+                                step="0.1" placeholder="78" required></label>
+                        <label class="student-field"><span>คะแนนเต็ม</span><input id="grade-max-score" type="number"
+                                min="0.1" step="0.1" placeholder="100" required></label>
+                        <label class="student-field"><span>หน่วยกิต</span><input id="grade-credits" type="number"
+                                min="0.5" max="12" step="0.5" value="1" required></label>
+                        <label class="student-field"><span>วันที่</span><input id="grade-date" type="date"
+                                required></label>
+                        <button class="student-primary-button grade-submit" id="grade-submit" type="submit">เพิ่มคะแนน
+                            <span>＋</span></button>
+                    </form>
+                    <input id="grade-id" type="hidden">
+                    <div class="grade-edit-actions"><button class="student-outline-button" id="cancel-grade-edit"
+                            type="button" hidden>ยกเลิกแก้ไข</button></div>
+                    <div class="table-scroll grade-table-scroll">
+                        <table class="student-table grade-table">
+                            <thead>
+                                <tr>
+                                    <th>วิชา</th>
+                                    <th>รายการ</th>
+                                    <th>คะแนน</th>
+                                    <th>เกรด</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody id="grade-rows"></tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="student-section exams-section" id="exams">
+                    <div class="student-section-heading">
+                        <div>
+                            <p class="student-eyebrow">MAKE SPACE TO PREPARE</p>
+                            <h2>สอบที่กำลังจะมาถึง</h2>
+                        </div><button class="student-outline-button" id="add-exam">＋ เพิ่มวันสอบ</button>
+                    </div>
+                    <form id="exam-form" class="exam-form">
+                        <input id="exam-id" type="hidden">
+                        <input id="exam-subject" maxlength="80" placeholder="วิชา" aria-label="วิชาสอบ" required>
+                        <input id="exam-title" maxlength="160" placeholder="ชื่อการสอบ" aria-label="ชื่อการสอบ"
+                            required>
+                        <input id="exam-date" type="date" aria-label="วันที่สอบ" required>
+                        <button class="student-primary-button" id="exam-submit" type="submit">เพิ่ม</button>
+                    </form>
+                    <button class="student-outline-button exam-cancel-edit" id="cancel-exam-edit" type="button"
+                        hidden>ยกเลิกแก้ไข</button>
+                    <div class="exam-list" id="exam-list"></div>
+                    <p class="student-empty" id="exams-empty" hidden>ยังไม่มีวันสอบในกำหนดการ</p>
+                </section>
+            </section>
+        </div>
+
+        <section class="student-backup-tools" aria-label="สำรองและคืนค่าข้อมูล">
+            <a class="student-backup-button" href="{{ url_for('export_backup') }}">ดาวน์โหลดข้อมูลสำรอง</a>
+            <form action="{{ url_for('import_backup') }}" method="post" enctype="multipart/form-data"
+                onsubmit="return confirm('การคืนค่าจะแทนที่ข้อมูลส่วนตัวปัจจุบันทั้งหมด ดำเนินการต่อหรือไม่?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <label for="student-backup-file">เลือกไฟล์ JSON</label>
+                <input id="student-backup-file" name="backup_file" type="file" accept="application/json,.json" required>
+                <button class="student-backup-button" type="submit">คืนค่าข้อมูล</button>
+            </form>
+            {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}<p class="student-backup-feedback {{ category }}" role="status">{{
+                message }}</p>{% endfor %}
+            {% endwith %}
+        </section>
+        <footer class="student-footer"><span>DAYMARK <i>·</i> STUDENT SPACE</span><span>ข้อมูลนักเรียนจัดเก็บแยกจาก
+                Habit Mode</span></footer>
+    </main>
+
+    <dialog class="student-dialog" id="assignment-dialog">
+        <form id="assignment-form" class="dialog-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="student-eyebrow">ASSIGNMENT</p>
+                    <h2 id="assignment-dialog-title">เพิ่มงานใหม่</h2>
+                </div><button class="dialog-close" type="button" data-close="assignment-dialog"
+                    aria-label="ปิด">×</button>
+            </div>
+            <input id="assignment-id" type="hidden">
+            <label class="student-field"><span>วิชา</span><select id="assignment-subject" required></select></label>
+            <label class="student-field"><span>งาน / การบ้าน</span><input id="assignment-title" maxlength="180"
+                    required></label>
+            <label class="student-field"><span>กำหนดส่ง</span><input id="assignment-due" type="date" required></label>
+            <div class="dialog-fields-two"><label class="student-field"><span>สถานะ</span><select
+                        id="assignment-status">
+                        <option value="todo">ยังไม่ได้ทำ</option>
+                        <option value="in_progress">กำลังทำ</option>
+                        <option value="done">เสร็จแล้ว</option>
+                    </select></label><label class="student-field"><span>ความสำคัญ</span><select
+                        id="assignment-priority">
+                        <option value="high">สูง</option>
+                        <option value="medium" selected>กลาง</option>
+                        <option value="low">ต่ำ</option>
+                    </select></label></div>
+            <div class="dialog-actions"><button class="student-primary-button" type="submit">บันทึกงาน</button></div>
+        </form>
+    </dialog>
+
+    <dialog class="student-dialog" id="schedule-dialog">
+        <form id="schedule-form" class="dialog-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="student-eyebrow">CLASS SCHEDULE</p>
+                    <h2 id="schedule-dialog-title">เพิ่มคาบเรียน</h2>
+                </div><button class="dialog-close" type="button" data-close="schedule-dialog"
+                    aria-label="ปิด">×</button>
+            </div>
+            <input id="schedule-id" type="hidden">
+            <label class="student-field"><span>วันเรียน</span><select id="schedule-weekday">
+                    <option value="0">จันทร์</option>
+                    <option value="1">อังคาร</option>
+                    <option value="2">พุธ</option>
+                    <option value="3">พฤหัสบดี</option>
+                    <option value="4">ศุกร์</option>
+                </select></label>
+            <label class="student-field"><span>วิชา</span><input id="schedule-subject" maxlength="80" required></label>
+            <div class="dialog-fields-two"><label class="student-field"><span>เริ่ม</span><input id="schedule-start"
+                        type="time" required></label><label class="student-field"><span>สิ้นสุด</span><input
+                        id="schedule-end" type="time" required></label></div>
+            <label class="student-field"><span>ห้องเรียน</span><input id="schedule-room" maxlength="80"
+                    placeholder="เช่น อาคาร 2 · 304"></label>
+            <div class="dialog-actions"><button class="student-primary-button" type="submit">บันทึกคาบเรียน</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="student-dialog" id="subject-dialog">
+        <form id="subject-form" class="dialog-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="student-eyebrow">YOUR SUBJECTS</p>
+                    <h2 id="subject-dialog-title">เพิ่มวิชา</h2>
+                </div><button class="dialog-close" type="button" data-close="subject-dialog" aria-label="ปิด">×</button>
+            </div>
+            <input id="subject-id" type="hidden">
+            <label class="student-field"><span>ชื่อวิชา</span><input id="subject-name" maxlength="80" required></label>
+            <label class="student-field"><span>สีประจำวิชา</span><input id="subject-color" type="color"
+                    value="#38a794"></label>
+            <div class="dialog-actions"><button class="student-primary-button" type="submit">เพิ่มวิชา</button></div>
+        </form>
+    </dialog>
+
+    <dialog class="student-dialog note-detail-dialog" id="note-detail-dialog">
+        <form id="note-edit-form" class="dialog-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="student-eyebrow">EDIT SUBJECT NOTE</p>
+                    <h2>แก้ไขโน้ต</h2>
+                </div>
+                <button class="dialog-close" type="button" data-close="note-detail-dialog" aria-label="ปิด">×</button>
+            </div>
+            <input id="note-edit-id" type="hidden">
+            <label class="student-field"><span>วิชา</span><select id="note-edit-subject" required></select></label>
+            <label class="student-field"><span>หัวข้อ</span><input id="note-edit-title" maxlength="180"
+                    required></label>
+            <label class="student-field"><span>เนื้อหา</span><textarea id="note-edit-content" maxlength="20000" rows="9"
+                    required></textarea></label>
+            <div class="dialog-actions note-detail-actions">
+                <button class="student-danger-button" id="delete-note" type="button">ลบโน้ต</button>
+                <button class="student-primary-button" type="submit">บันทึกการแก้ไข</button>
+            </div>
+        </form>
+    </dialog>
+
+    <dialog class="student-dialog" id="calendar-dialog">
+        <form id="calendar-form" class="dialog-form">
+            <div class="dialog-heading">
+                <div>
+                    <p class="student-eyebrow">IMPORTANT DATE</p>
+                    <h2>เพิ่มวันสำคัญ</h2>
+                </div><button class="dialog-close" type="button" data-close="calendar-dialog"
+                    aria-label="ปิด">×</button>
+            </div>
+            <input id="calendar-event-id" type="hidden">
+            <label class="student-field"><span>ชื่อกิจกรรม</span><input id="calendar-title" maxlength="160"
+                    required></label>
+            <label class="student-field"><span>วันที่</span><input id="calendar-date" type="date" required></label>
+            <label class="student-field"><span>ประเภท</span><select id="calendar-type">
+                    <option value="exam">วันสอบ</option>
+                    <option value="assignment">วันส่งงาน</option>
+                    <option value="holiday">วันหยุด</option>
+                    <option value="other">อื่น ๆ</option>
+                </select></label>
+            <label class="student-field"><span>รายละเอียด</span><input id="calendar-note" maxlength="1000"></label>
+            <div class="dialog-actions"><button class="student-primary-button" id="calendar-submit"
+                    type="submit">บันทึกวันสำคัญ</button>
+            </div>
+        </form>
+    </dialog>
+    <div class="student-toast" id="student-toast" role="status" aria-live="polite"></div>
+    {% include 'chat_widget.html' %}
+    <script src="{{ url_for('static', filename='js/student.js', v='12') }}"></script>
+    <script src="{{ url_for('static', filename='js/chat.js', v='1') }}"></script>
+</body>
+
+</html>

@@ -1,0 +1,9 @@
+<nav class="primary-navigation" aria-label="เมนูหลัก">
+    <a href="{{ url_for('finance') }}#quick-add-title" {% if primary_nav_active=='finance' %} aria-current="page" {%
+        endif %}>บันทึกรายการ</a>
+    <a href="{{ url_for('finance') }}#expected-income-title">รายการออม &amp; เงินรอรับ</a>
+    <a href="{{ url_for('student.student_dashboard') }}" {% if primary_nav_active=='student' %} aria-current="page" {%
+        endif %}>มุมนักเรียน</a>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="เปลี่ยนเป็นโหมดมืด" aria-pressed="false"
+        title="โหมดมืด">☾</button>
+</nav>

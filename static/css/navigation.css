@@ -1,0 +1,42 @@
+.primary-navigation {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #65756f;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.primary-navigation a {
+    padding: 9px 12px;
+    border: 1px solid transparent;
+    border-radius: 5px;
+    transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.primary-navigation a:hover {
+    border-color: #d5e0d8;
+    background: #fff;
+    color: #1b2d2b;
+}
+
+.primary-navigation a[aria-current="page"] {
+    border-color: #b7d7c5;
+    background: #e7f3eb;
+    color: #1f725e;
+}
+
+@media (max-width: 760px) {
+    .primary-navigation {
+        order: 3;
+        width: 100%;
+        overflow-x: auto;
+        border-top: 1px solid #e1e8e2;
+        padding-top: 6px;
+    }
+
+    .primary-navigation a {
+        flex: 0 0 auto;
+    }
+}

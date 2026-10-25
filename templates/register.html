@@ -1,0 +1,45 @@
+{% extends "auth_base.html" %}
+{% block title %}สมัครสมาชิก | Daymark{% endblock %}
+{% block content %}
+<p class="auth-eyebrow">CREATE YOUR SPACE</p>
+<h2 class="auth-heading">สมัครสมาชิก</h2>
+<p class="auth-subtitle">สร้างบัญชีเพื่อเริ่มเก็บเป้าหมายและแผนการเรียนของคุณ</p>
+{% if error %}<p class="auth-error" role="alert">{{ error }}</p>{% endif %}
+<form id="register-form" method="post" action="{{ url_for('create_account') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <label class="auth-label" for="username">ชื่อผู้ใช้</label>
+    <input class="auth-input" id="username" name="username" minlength="3" maxlength="40" autocomplete="username"
+        required>
+    <label class="auth-label" for="email">อีเมล</label>
+    <input class="auth-input" id="email" name="email" type="email" maxlength="254" autocomplete="email" required>
+    <label class="auth-label" for="password">รหัสผ่าน (อย่างน้อย 10 ตัวอักษร)</label>
+    <input class="auth-input" id="password" name="password" type="password" minlength="10" maxlength="128"
+        autocomplete="new-password" required>
+    <button class="auth-submit" type="submit">สร้างบัญชี</button>
+</form>
+<script>
+    const registerForm = document.getElementById("register-form");
+    registerForm.addEventListener("invalid", (event) => {
+        const input = event.target;
+        if (input.validity.valueMissing) {
+            input.setCustomValidity("กรุณากรอกข้อมูลในช่องนี้");
+        } else if (input.validity.tooShort && input.id === "username") {
+            input.setCustomValidity("ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร");
+        } else if (input.validity.tooShort && input.id === "password") {
+            input.setCustomValidity("รหัสผ่านต้องมีอย่างน้อย 10 ตัวอักษร");
+        } else if (input.validity.tooLong && input.id === "username") {
+            input.setCustomValidity("ชื่อผู้ใช้ต้องมีไม่เกิน 40 ตัวอักษร");
+        } else if (input.validity.tooLong && input.id === "email") {
+            input.setCustomValidity("อีเมลต้องมีไม่เกิน 254 ตัวอักษร");
+        } else if (input.validity.tooLong && input.id === "password") {
+            input.setCustomValidity("รหัสผ่านต้องมีไม่เกิน 128 ตัวอักษร");
+        } else if (input.validity.typeMismatch && input.id === "email") {
+            input.setCustomValidity("กรุณากรอกอีเมลให้ถูกต้อง");
+        }
+    }, true);
+    registerForm.addEventListener("input", (event) => {
+        event.target.setCustomValidity("");
+    }, true);
+</script>
+<p class="auth-switch">มีบัญชีแล้ว? <a href="{{ url_for('login') }}">เข้าสู่ระบบ</a></p>
+{% endblock %}

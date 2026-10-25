@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="th">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#10B981">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <script src="{{ url_for('static', filename='js/theme.js', v='1') }}"></script>
+    <script src="{{ url_for('static', filename='js/pwa.js') }}" defer></script>
+    <title>{% block title %}บัญชี Daymark{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kanit:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            color-scheme: light;
+            font-family: 'Kanit', 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #f4f5ef;
+            color: #17231f;
+        }
+
+        .auth-layout {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: minmax(280px, .85fr) minmax(360px, 1.15fr);
+        }
+
+        .auth-aside {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            padding: 40px clamp(28px, 6vw, 92px);
+            background: #14221e;
+            color: #f4f5ef;
+        }
+
+        .auth-brand {
+            color: inherit;
+            text-decoration: none;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0;
+        }
+
+        .auth-brand span {
+            color: #82d4b3;
+        }
+
+        .auth-aside-copy {
+            max-width: 440px;
+            padding: 70px 0;
+        }
+
+        .auth-aside-copy p {
+            color: #a9bbb2;
+            font-size: 14px;
+            line-height: 1.8;
+        }
+
+        .auth-aside-copy h1 {
+            margin: 0;
+            font-size: clamp(34px, 4vw, 58px);
+            line-height: 1.2;
+            font-weight: 600;
+        }
+
+        .auth-aside-foot {
+            color: #a9bbb2;
+            font-size: 12px;
+        }
+
+        .auth-main {
+            display: grid;
+            place-items: center;
+            padding: 32px;
+        }
+
+        .auth-form-wrap {
+            width: min(100%, 430px);
+        }
+
+        .auth-eyebrow {
+            color: #387763;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.4px;
+        }
+
+        .auth-heading {
+            margin: 10px 0 8px;
+            font-size: 32px;
+            line-height: 1.3;
+            font-weight: 600;
+        }
+
+        .auth-subtitle {
+            margin: 0 0 30px;
+            color: #66736d;
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        .auth-label {
+            display: block;
+            margin: 18px 0 7px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .auth-input {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 48px;
+            border: 1px solid #d5ddd6;
+            border-radius: 5px;
+            padding: 0 13px;
+            background: #fff;
+            color: #17231f;
+            font: inherit;
+        }
+
+        .auth-input:focus {
+            outline: 3px solid #b9e5d4;
+            border-color: #387763;
+        }
+
+        .auth-submit {
+            width: 100%;
+            min-height: 48px;
+            margin-top: 24px;
+            border: 0;
+            border-radius: 5px;
+            background: #286c55;
+            color: #fff;
+            font: inherit;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .auth-submit:hover {
+            background: #1d5945;
+        }
+
+        .auth-error {
+            margin: 16px 0;
+            border-left: 3px solid #bd5d48;
+            padding: 10px 12px;
+            background: #fff0eb;
+            color: #713a2e;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .auth-switch {
+            margin-top: 22px;
+            color: #66736d;
+            text-align: center;
+            font-size: 13px;
+        }
+
+        .auth-switch a {
+            color: #286c55;
+            font-weight: 700;
+            text-decoration: none;
+        }
+
+        @media (max-width: 720px) {
+            .auth-layout {
+                grid-template-columns: 1fr;
+            }
+
+            .auth-aside {
+                min-height: auto;
+                padding: 22px 24px;
+            }
+
+            .auth-aside-copy {
+                padding: 26px 0 18px;
+            }
+
+            .auth-aside-copy h1 {
+                font-size: 28px;
+            }
+
+            .auth-aside-copy p,
+            .auth-aside-foot {
+                display: none;
+            }
+
+            .auth-main {
+                padding: 34px 24px 52px;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/typography.css', v='1') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/light-theme.css', v='5') }}">
+</head>
+
+<body>
+    <div class="auth-layout">
+        <button class="theme-toggle auth-theme-toggle" type="button" data-theme-toggle aria-label="เปลี่ยนเป็นโหมดมืด"
+            aria-pressed="false" title="โหมดมืด">☾</button>
+        <aside class="auth-aside">
+            <a class="auth-brand" href="{{ url_for('login') }}">daymark<span>.</span></a>
+            <div class="auth-aside-copy">
+                <h1>พื้นที่ส่วนตัว<br>สำหรับทุกวัน</h1>
+                <p>เป้าหมาย งานเรียน และบันทึกของคุณ แยกเป็นส่วนตัวตามบัญชี</p>
+            </div>
+            <div class="auth-aside-foot">DAYMARK · YOUR PACE, YOUR PROGRESS</div>
+        </aside>
+        <main class="auth-main">
+            <section class="auth-form-wrap">{% block content %}{% endblock %}</section>
+        </main>
+    </div>
+</body>
+
+</html>
